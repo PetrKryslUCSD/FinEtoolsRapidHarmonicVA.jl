@@ -1,0 +1,1 @@
+– Why not have each example folder be its own project?
