@@ -76,6 +76,18 @@ function model_setup(sim)
     return model
 end
 
+function reduced_basis(sim)
+    prop = retrieve_json(sim)
+    if prop["reduction_method"] == "free_reduced"
+        redu_free_vibration(sim)
+    elseif prop["reduction_method"] == "free"
+        full_free_vibration(sim)
+    else
+        @error "Unknown reduced-basis method"
+    end
+    true
+end
+
 function full_free_vibration(sim)
     @info "Free Vibration"
     prop = retrieve_json(sim)
@@ -124,6 +136,18 @@ function full_free_vibration(sim)
     results["free_vibration"] = rd
     store_json(resultsfile, results)
 
+    true
+end
+
+function harmonic_vibration(sim)
+    prop = retrieve_json(sim)
+    if prop["harmonic_method"] == "modal"
+        full_harmonic_vibration(sim)
+    elseif prop["harmonic_method"] == "direct"
+        full_harmonic_vibration_direct(sim)
+    else
+        @error "Unknown harmonic-vibration method"
+    end
     true
 end
 

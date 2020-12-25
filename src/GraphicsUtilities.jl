@@ -51,6 +51,7 @@ function plot_frf(sim_list = ["sim1"])
             :plotlyServerURL=>"https://chart-studio.plotly.com"
             ))
     display(pl)
+    true
 end
 
 function plot_timing(sim_list = ["sim1"], stage = "harmonic_vibration")
@@ -82,4 +83,5 @@ function plot_timing(sim_list = ["sim1"], stage = "harmonic_vibration")
             :plotlyServerURL=>"https://chart-studio.plotly.com"
             ))
     display(pl)
+    true
 end
