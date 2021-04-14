@@ -1,5 +1,6 @@
 using JSON
 using DelimitedFiles
+using SparseArrays
 using HDF5
 using FinEtools
 
@@ -31,20 +32,35 @@ function store_json(j, d)
 	end
 end
 
+const MATRIX_UNKNOWN = -1
+const MATRIX_DENSE = 0
+const MATRIX_SPARSE = 1
+
 """
     retrieve_matrix(fname)
 
-Retrieve a matrix. 
+Retrieve a matrix.
 """
 function retrieve_matrix(fname)
     fname = with_extension(fname, "h5")
-    try
-        return h5open(fname, "r") do file
-            read(file, "matrix")
-        end
+    typ = MATRIX_UNKNOWN
+    f = try
+        h5open(fname, "r") 
     catch SystemError
-        return nothing
+        nothing
     end
+    typ = read(f, "matrix_type")
+    if typ == MATRIX_DENSE
+        return read(f, "matrix")
+    elseif typ == MATRIX_SPARSE
+        I = read(f, "I")
+        J = read(f, "J")
+        V = read(f, "V")
+        nrows = read(f, "nrows")
+        ncols = read(f, "ncols")
+        return sparse(I, J, V, nrows, ncols)
+    end
+    return nothing
 end
 
 """
@@ -55,6 +71,29 @@ Store a matrix.
 function store_matrix(fname, matrix)
     fname = with_extension(fname, "h5")
     h5open(fname, "w") do file
+        write(file, "matrix_type", MATRIX_DENSE) 
         write(file, "matrix", matrix) 
     end
 end
+
+
+"""
+    store_matrix(fname, matrix)
+
+Store a matrix.
+"""
+function store_matrix(fname, matrix::SparseArrays.SparseMatrixCSC{Float64, Int64})
+    I, J, V = findnz(matrix)
+    fname = with_extension(fname, "h5")
+    h5open(fname, "w") do file
+        write(file, "matrix_type", MATRIX_SPARSE) 
+        write(file, "I", I) 
+        write(file, "J", J) 
+        write(file, "V", V) 
+        write(file, "nrows", size(matrix, 1)) 
+        write(file, "ncols", size(matrix, 2)) 
+    end
+end
+
+
+
