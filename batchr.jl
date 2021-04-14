@@ -10,7 +10,7 @@ include("examples/twisted_bar/define_sim.jl")
 @info "Burn in "
 
 # Burn in
-for mesh_n in [5,]
+for mesh_n in [6,]
     for nmodes in [50, ]
      
          sim2 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "free", harmonic_method = "modal")
@@ -34,7 +34,7 @@ end
 @info "Running simulations"
 
 #Now for real
-for mesh_n in [10, ]
+for mesh_n in [6, 12, 24]
     for nmodes in [50, ]
 
         sim2 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "free", harmonic_method = "modal")
