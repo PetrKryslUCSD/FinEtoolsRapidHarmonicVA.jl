@@ -13,7 +13,6 @@ function load_mesh(meshfile)
     return  fens, fes
 end
 
-
 function ABAT!(C, A, B, AT, AB)
     M, N = size(A)
     @assert N == size(B, 1)
@@ -23,14 +22,16 @@ function ABAT!(C, A, B, AT, AB)
     return C
 end
 
-function full_free_vibration(sim, make_model)
+function free(cdir, sim, make_model)
     @info "Free Vibration"
-    prop = retrieve_json(sim)
+    prop = retrieve_json(joinpath(cdir, sim))
 
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
-
+    resultsdir = joinpath(cdir, prop["resultsdir"])
+    mkpath(resultsdir)
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = joinpath(cdir, prop["matricesdir"])
+    mkpath(matricesdir)
+    
     results = Dict()
     if isfile(resultsfile)
         results = retrieve_json(resultsfile)
@@ -70,11 +71,12 @@ function full_free_vibration(sim, make_model)
     rd["frequencies"] = fs
     timing["Total"] = timing["Problem setup"] + timing["EV problem"]
     rd["timing"] = timing
-
-    mkpath(prop["matricesdir"])
-    rd["basis"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-Phi", "h5")))
+@show matricesdir, with_extension(sim * "-Phi", "h5")
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    @show rd["basis"] = Dict("file"=>file)
     store_matrix(rd["basis"]["file"], evec)
-    rd["eigenvalues"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-eval", "h5")))
+    file = joinpath(matricesdir, with_extension(sim * "-eval", "h5"))
+    rd["eigenvalues"] = Dict("file"=>file)
     store_matrix(rd["eigenvalues"]["file"], eval)
 
     results["reduced_basis"] = rd
@@ -110,13 +112,15 @@ function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension
     return Nc, nbf1max
 end
 
-function redu_free_vibration(sim, make_model)
-    @info "Free Vibration (Reduced)"
-    prop = retrieve_json(sim)
+function two_stage_free(cdir, sim, make_model)
+    @info "Free Vibration (two-stage reduced)"
+    prop = retrieve_json(joinpath(cdir, sim))
 
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
+    resultsdir = joinpath(cdir, prop["resultsdir"])
+    mkpath(resultsdir)
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = joinpath(cdir, prop["matricesdir"])
+    mkpath(matricesdir)
 
     results = Dict()
     if isfile(resultsfile)
@@ -226,10 +230,11 @@ function redu_free_vibration(sim, make_model)
     timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"]
     rd["timing"] = timing
 
-    mkpath(prop["matricesdir"])
-    rd["basis"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-Phi", "h5")))
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    rd["basis"] = Dict("file"=>file)
     store_matrix(rd["basis"]["file"], approxevec)
-    rd["eigenvalues"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-eval", "h5")))
+    file = joinpath(matricesdir, with_extension(sim * "-eval", "h5"))
+    rd["eigenvalues"] = Dict("file"=>file)
     store_matrix(rd["eigenvalues"]["file"], eval)
 
     results["reduced_basis"] = rd
@@ -238,7 +243,7 @@ function redu_free_vibration(sim, make_model)
     true
 end
 
-function redu_conc(sim, make_model)
+function conc_reduced(sim, make_model)
     @info "CoNC (Reduced)"
     prop = retrieve_json(sim)
 
@@ -424,7 +429,7 @@ function redu_free_vibration_alt(sim, make_model)
     true
 end
 
-function enh_redu_free_vibration(sim, make_model)
+function two_stage_free_enhanced(sim, make_model)
     @info "Free Vibration (Reduced, Enhanced)"
     prop = retrieve_json(sim)
 
@@ -613,13 +618,15 @@ function enh_redu_free_vibration(sim, make_model)
     true
 end
 
-function harmonic_vibration_modal(sim, make_model)
+function harmonic_vibration_modal(cdir, sim, make_model)
     @info "Harmonic Vibration (modal)"
-    prop = retrieve_json(sim)
+    prop = retrieve_json(joinpath(cdir, sim))
     
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
+    resultsdir = joinpath(cdir, prop["resultsdir"])
+    mkpath(resultsdir)
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = joinpath(cdir, prop["matricesdir"])
+    mkpath(matricesdir)
 
     if !isfile(resultsfile)
         @error "Need the results"
@@ -681,8 +688,8 @@ function harmonic_vibration_modal(sim, make_model)
     timing["Total"] = timing["Problem setup"] + timing["Reduced matrices"] + timing["Frequency sweep"]
     rd["timing"] = timing
 
-    mkpath(prop["resultsdir"])
-    rd["frf"] = Dict("file"=>joinpath(prop["resultsdir"], with_extension(sim * "-frf", "h5")))
+    file = joinpath(resultsdir, with_extension(sim * "-frf", "h5"))
+    rd["frf"] = Dict("file"=>file)
     store_matrix(rd["frf"]["file"], frf)
 
     results["harmonic_vibration"] = rd
@@ -934,7 +941,7 @@ function lanczos_ritz(sim, make_model)
     true
 end
 
-function redu_wyd_ritz(sim, make_model)
+function two_stage_wyd_ritz(sim, make_model)
     @info "WYD Ritz (Reduced)"
     prop = retrieve_json(sim)
 
@@ -1055,22 +1062,22 @@ function redu_wyd_ritz(sim, make_model)
     true
 end
 
-function reduced_basis(sim, make_model)
-    prop = retrieve_json(sim)
-    if prop["reduction_method"] == "free_reduced"
-        redu_free_vibration(sim, make_model)
-    elseif prop["reduction_method"] == "free_reduced_enhanced"
-        enh_redu_free_vibration(sim, make_model)
+function reduced_basis(cdir, sim, make_model)
+    prop = retrieve_json(joinpath(cdir, sim))
+    if prop["reduction_method"] == "two_stage_free"
+        two_stage_free(cdir, sim, make_model)
+    elseif prop["reduction_method"] == "two_stage_free_enhanced"
+        two_stage_free_enhanced(cdir, sim, make_model)
     elseif prop["reduction_method"] == "free"
-        full_free_vibration(sim, make_model)
+        free(cdir, sim, make_model)
     elseif prop["reduction_method"] == "wyd_ritz"
-        wyd_ritz(sim, make_model)
+        wyd_ritz(cdir, sim, make_model)
     elseif prop["reduction_method"] == "lanczos_ritz"
-        lanczos_ritz(sim, make_model)
-    elseif prop["reduction_method"] == "reduced_conc"
-        redu_conc(sim, make_model)
-    elseif prop["reduction_method"] == "reduced_wyd_ritz"
-        redu_wyd_ritz(sim, make_model)
+        lanczos_ritz(cdir, sim, make_model)
+    elseif prop["reduction_method"] == "conc_reduced"
+        conc_reduced(cdir, sim, make_model)
+    elseif prop["reduction_method"] == "two_stage_wyd_ritz"
+        two_stage_wyd_ritz(cdir, sim, make_model)
     elseif prop["reduction_method"] == "none"
     else
         @error "Unknown reduced-basis method"
@@ -1078,20 +1085,20 @@ function reduced_basis(sim, make_model)
     true
 end
 
-function harmonic_vibration(sim, make_model)
-    prop = retrieve_json(sim)
+function harmonic_vibration(cdir, sim, make_model)
+    prop = retrieve_json(joinpath(cdir, sim))
     if prop["harmonic_method"] == "modal"
-        harmonic_vibration_modal(sim, make_model)
+        harmonic_vibration_modal(cdir, sim, make_model)
     elseif prop["harmonic_method"] == "direct"
-        harmonic_vibration_direct(sim, make_model)
+        harmonic_vibration_direct(cdir, sim, make_model)
     else
         @error "Unknown harmonic-vibration method"
     end
     true
 end
 
-function solve(sim, make_model)
-    reduced_basis(sim, make_model)
-    harmonic_vibration(sim, make_model)
+function solve(cdir, sim, make_model)
+    reduced_basis(cdir, sim, make_model)
+    harmonic_vibration(cdir, sim, make_model)
     true
 end

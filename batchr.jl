@@ -7,47 +7,33 @@ using FinEtoolsRapidHarmonicVA
 
 include("examples/twisted_bar/define_sim.jl")
 
+reduction_methods = ["free", "two_stage_free", "wyd_ritz", "two_stage_wyd_ritz"]
+reduction_methods = ["free", "two_stage_free"]
+
 @info "Burn in "
 
 # Burn in
-for mesh_n in [6,]
+for mesh_n in [4,]
     for nmodes in [50, ]
      
-         sim2 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "free", harmonic_method = "modal")
-         solve(sim2, make_model)
-         
-         sim3 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "free_reduced", harmonic_method = "modal")
-         solve(sim3, make_model) 
-         
-         sim4 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "wyd_ritz", harmonic_method = "modal")
-         solve(sim4, make_model) 
-         
-         sim5 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "reduced_conc", harmonic_method = "modal")
-         solve(sim5, make_model) 
-
-        #sim5 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "free_reduced_enhanced", harmonic_method = "modal")
-        #solve(sim5, make_model) 
+        for reduction_method in reduction_methods
+           sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method)
+           solve(sim_directory(), sim, make_model)
+        end
 
     end
 end
 
-@info "Running simulations"
+# @info "Running simulations"
 
-#Now for real
-for mesh_n in [6, 12, 24]
-    for nmodes in [50, ]
+# #Now for real
+# for mesh_n in [4, ]
+#     for nmodes in [50, 100, 200]
 
-        sim2 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "free", harmonic_method = "modal")
-        solve(sim2, make_model)
-        
-        sim3 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "free_reduced", harmonic_method = "modal")
-        solve(sim3, make_model) 
-        
-        sim4 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "wyd_ritz", harmonic_method = "modal")
-        solve(sim4, make_model) 
-        
-        sim5 = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "reduced_conc", harmonic_method = "modal")
-        solve(sim5, make_model) 
+#         for reduction_method in reduction_methods
+#             sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method)
+#             solve(sim, make_model)
+#         end
 
-    end
-end
+#     end
+# end

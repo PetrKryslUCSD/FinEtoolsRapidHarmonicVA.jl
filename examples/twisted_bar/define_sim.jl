@@ -86,10 +86,10 @@ function make_model(prop)
     model["F"] = F
 
     return model
-end # twisted_beam_algo
+end # 
 
 function material_parameters()
-    # Material parameters of the solid cylinder
+    # Material parameters of the structure
     
     E = 70000*phun("MPa")::FFlt;
     nu = 0.33::FFlt;
@@ -100,24 +100,14 @@ function material_parameters()
     return E, nu, rho, dimensions, mass_shift
 end
 
-#function cantilever_mesh(prop)
-#    n = prop["mesh_n"]
-#    fens, fes = T4block(prop["dimensions"]..., n*20, n*2, n*2)
-#    f = "cantilever-n$(n)"
-#    fp = joinpath(prop["meshesdir"], f)
-#    mkpath(prop["meshesdir"])
-#    FinEtools.MeshExportModule.MESH.write_MESH(fp, fens, fes)
-#    return "$(f).mesh"
-#end
-
 function common_parameters()
     prop = Dict() 
 
     # Folders
-    prop["meshesdir"] = "$(sim_directory())/meshes"
-    prop["resultsdir"] = "$(sim_directory())/results"
-    prop["graphicsdir"] = "$(sim_directory())/graphics"
-    prop["matricesdir"] = "$(sim_directory())/matrices"
+    prop["meshesdir"] = "meshes"
+    prop["resultsdir"] = "results"
+    prop["graphicsdir"] = "graphics"
+    prop["matricesdir"] = "matrices"
 
     # Material Parameters, geometry
     E, nu, rho, dimensions, mass_shift = material_parameters() 
@@ -161,7 +151,7 @@ function define_sim(; kws...)
 
     if (!isfile(sim * ".json")) || 
         ((:force_overwrite in keys(kws)) && kws[:force_overwrite])
-        store_json(sim * ".json", prop)
+        store_json(joinpath(sim_directory(), sim * ".json"), prop)
         @info  "Wrote $(sim) json"
     else
         @warn "Did not overwrite $(sim) json!"

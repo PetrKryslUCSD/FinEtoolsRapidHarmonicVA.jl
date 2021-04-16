@@ -168,22 +168,22 @@ function plot_times_reduced_basis(list_of_sim_lists = [["sim1",],], filename = "
     true
 end
 
-function plot_frf_errors(sim_list = ["sim1"], filename = "plot.pdf")
-    _plot_frf(sim_list, filename, :errors)
+function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf")
+    _plot_frf(cdir, sim_list, filename, :errors)
 end
 
-function plot_frf_amplitudes(sim_list = ["sim1"], filename = "plot.pdf")
-    _plot_frf(sim_list, filename, :amplitudes)
+function plot_frf_amplitudes(cdir, csim_list = ["sim1"], filename = "plot.pdf")
+    _plot_frf(cdir, sim_list, filename, :amplitudes)
 end
 
-function _plot_frf(sim_list = ["sim1"], filename = "plot.pdf", what = :errors)
+function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors)
     objects = []
     
     direct_frequencies, direct_ampls = let sim = sim_list[1]
-        prop = retrieve_json(sim)
+        prop = retrieve_json(joinpath(cdir, sim))
 
         # Load the data for the graph of the FRF
-        j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
+        j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
         results = retrieve_json(j)
         hvd = results["harmonic_vibration"] 
         # Unwrap the data
