@@ -14,9 +14,9 @@ using FinEtoolsRapidHarmonicVA
 function _reduced_basis_technique(reduction_method)
     if reduction_method == "free"
         return "Full VB"
-    elseif reduction_method == "free_reduced"
+    elseif reduction_method == "two_stage_free"
         return "Red VB"
-    elseif reduction_method == "free_reduced_enhanced"
+    elseif reduction_method == "two_stage_free_enhanced"
         return "Red VB/enh"
     elseif reduction_method == "wyd_ritz"
         return "WYD"
@@ -33,13 +33,13 @@ end
 function _reduced_basis_style(reduction_method)
     if reduction_method == "free"
         return ("red", "diamond")
-    elseif reduction_method == "free_reduced"
+    elseif reduction_method == "two_stage_free"
         return ("green", "x")
     elseif reduction_method == "wyd_ritz"
          return ("blue", "o")
     elseif reduction_method == "lanczos_ritz"
          return ("brown", "square")
-    elseif reduction_method == "free_reduced_enhanced"
+    elseif reduction_method == "two_stage_free_enhanced"
         return ("magenta", "star")
    elseif reduction_method == "reduced_wyd_ritz"
         return ("cyan")
@@ -53,9 +53,9 @@ end
 function _reduced_basis_time(reduction_method, tims)
     if reduction_method == "free"
         return sum([tims[k] for k in ["EV problem"]]) 
-    elseif reduction_method == "free_reduced"
+    elseif reduction_method == "two_stage_free"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction"]])
-    elseif reduction_method == "free_reduced_enhanced"
+    elseif reduction_method == "two_stage_free_enhanced"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     elseif reduction_method == "wyd_ritz"
         return sum([tims[k] for k in ["Factorize stiffness", "Ritz-vector matrix"]])
@@ -172,7 +172,7 @@ function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf")
     _plot_frf(cdir, sim_list, filename, :errors)
 end
 
-function plot_frf_amplitudes(cdir, csim_list = ["sim1"], filename = "plot.pdf")
+function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf")
     _plot_frf(cdir, sim_list, filename, :amplitudes)
 end
 
@@ -209,9 +209,9 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
     end
 
     for sim in sim_list[2:end]
-        prop = retrieve_json(sim)
+        prop = retrieve_json(joinpath(cdir, sim))
         # Load the data for the graph of the FRF
-        j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
+        j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
         results = retrieve_json(j)
         hvd = results["harmonic_vibration"] 
         # Unwrap the data
