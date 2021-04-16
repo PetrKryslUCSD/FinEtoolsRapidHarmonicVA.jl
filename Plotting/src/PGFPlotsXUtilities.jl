@@ -15,15 +15,15 @@ function _reduced_basis_technique(reduction_method)
     if reduction_method == "free"
         return "Full VB"
     elseif reduction_method == "two_stage_free"
-        return "Red VB"
+        return "2S VB"
     elseif reduction_method == "two_stage_free_enhanced"
         return "Red VB/enh"
     elseif reduction_method == "wyd_ritz"
         return "WYD"
     elseif reduction_method == "lanczos_ritz"
         return "LNC"
-    elseif reduction_method == "reduced_wyd_ritz"
-        return "Red WYD"
+    elseif reduction_method == "two_stage_wyd_ritz"
+        return "2S WYD"
     else
         return ""
     end
@@ -41,8 +41,8 @@ function _reduced_basis_style(reduction_method)
          return ("brown", "square")
     elseif reduction_method == "two_stage_free_enhanced"
         return ("magenta", "star")
-   elseif reduction_method == "reduced_wyd_ritz"
-        return ("cyan")
+   elseif reduction_method == "two_stage_wyd_ritz"
+        return ("cyan", "star")
     elseif reduction_method == "none"
          return ("black", "+")
     else
@@ -59,20 +59,22 @@ function _reduced_basis_time(reduction_method, tims)
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     elseif reduction_method == "wyd_ritz"
         return sum([tims[k] for k in ["Factorize stiffness", "Ritz-vector matrix"]])
+    elseif reduction_method == "two_stage_wyd_ritz"
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "Factorize stiffness", "Ritz-vector matrix"]])
     else
         return 0.0
     end
 end
 
-function plot_timing_reduced_basis(sim_list = ["sim1"], filename = "plot.pdf")
+function plot_timing_reduced_basis(cdir, sim_list = ["sim1"], filename = "plot.pdf")
     stage = "reduced_basis"
 
     c = []
 
     for sim in sim_list
-        prop = retrieve_json(sim)
+        prop = retrieve_json(joinpath(cdir, sim))
         # Load the data for the graph of the FRF
-        j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
+        j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
         results = retrieve_json(j)
         if stage in keys(results)
             sd = results[stage] 
@@ -124,15 +126,15 @@ function plot_times_reduced_basis(list_of_sim_lists = [["sim1",],], filename = "
         s = nothing
         for sim in sim_list
             prop = retrieve_json(sim)
-            s = _reduced_basis_style(prop["reduction_method"])
+            @show s = _reduced_basis_style(prop["reduction_method"])
             # Load the data for the graph of the FRF
             j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
             results = retrieve_json(j)
             if stage in keys(results)
                 sd = results[stage] 
                 tims = sd["timing"]
-                @show t = _reduced_basis_time(prop["reduction_method"], tims)
-                @show nm = sd["number_of_modes"]
+                t = _reduced_basis_time(prop["reduction_method"], tims)
+                nm = sd["number_of_modes"]
                 push!(c, (nm, t))
             end
         end
@@ -190,6 +192,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         direct_frequencies = hvd["sweep_frequencies"]
         frf = hvd["frf"]
         mf = frf["file"]
+        @show mf
         m = retrieve_matrix(mf)
         freal = real.(m)
         fimag = imag.(m)
@@ -224,7 +227,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         # Amplitude graph
         ampls = abs.(freal + 1im*fimag)./phun("mm")
         @assert length(ampls) == length(frequencies)
-        s = _reduced_basis_style(prop["reduction_method"])
+        @show s = _reduced_basis_style(prop["reduction_method"])
         @pgf p = PGFPlotsX.Plot(
         {
         color = s[1],

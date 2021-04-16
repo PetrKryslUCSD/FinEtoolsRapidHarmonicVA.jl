@@ -26,15 +26,15 @@ function free(cdir, sim, make_model)
     @info "Free Vibration"
     prop = retrieve_json(joinpath(cdir, sim))
 
-    resultsdir = joinpath(cdir, prop["resultsdir"])
-    mkpath(resultsdir)
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
     resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
-    matricesdir = joinpath(cdir, prop["matricesdir"])
-    mkpath(matricesdir)
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
     
     results = Dict()
-    if isfile(resultsfile)
-        results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -71,16 +71,16 @@ function free(cdir, sim, make_model)
     rd["frequencies"] = fs
     timing["Total"] = timing["Problem setup"] + timing["EV problem"]
     rd["timing"] = timing
-@show matricesdir, with_extension(sim * "-Phi", "h5")
+
     file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
-    @show rd["basis"] = Dict("file"=>file)
-    store_matrix(rd["basis"]["file"], evec)
+    rd["basis"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), evec)
     file = joinpath(matricesdir, with_extension(sim * "-eval", "h5"))
     rd["eigenvalues"] = Dict("file"=>file)
-    store_matrix(rd["eigenvalues"]["file"], eval)
+    store_matrix(joinpath(cdir, rd["eigenvalues"]["file"]), eval)
 
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
@@ -113,18 +113,18 @@ function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension
 end
 
 function two_stage_free(cdir, sim, make_model)
-    @info "Free Vibration (two-stage reduced)"
+    @info "Two-stage Free Vibration"
     prop = retrieve_json(joinpath(cdir, sim))
 
-    resultsdir = joinpath(cdir, prop["resultsdir"])
-    mkpath(resultsdir)
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
     resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
-    matricesdir = joinpath(cdir, prop["matricesdir"])
-    mkpath(matricesdir)
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
 
     results = Dict()
-    if isfile(resultsfile)
-        results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -232,13 +232,13 @@ function two_stage_free(cdir, sim, make_model)
 
     file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
     rd["basis"] = Dict("file"=>file)
-    store_matrix(rd["basis"]["file"], approxevec)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), approxevec)
     file = joinpath(matricesdir, with_extension(sim * "-eval", "h5"))
     rd["eigenvalues"] = Dict("file"=>file)
-    store_matrix(rd["eigenvalues"]["file"], eval)
+    store_matrix(joinpath(cdir, rd["eigenvalues"]["file"]), eval)
 
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
@@ -252,8 +252,8 @@ function conc_reduced(sim, make_model)
     resultsfile = joinpath(prop["resultsdir"], rf)
 
     results = Dict()
-    if isfile(resultsfile)
-        results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -310,7 +310,7 @@ function conc_reduced(sim, make_model)
     store_matrix(rd["basis"]["file"], Phi)
 
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
@@ -324,8 +324,8 @@ function redu_free_vibration_alt(sim, make_model)
     resultsfile = joinpath(prop["resultsdir"], rf)
 
     results = Dict()
-    if isfile(resultsfile)
-        results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -424,7 +424,7 @@ function redu_free_vibration_alt(sim, make_model)
     store_matrix(rd["eigenvalues"]["file"], eval)
 
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
@@ -438,8 +438,8 @@ function two_stage_free_enhanced(sim, make_model)
     resultsfile = joinpath(prop["resultsdir"], rf)
 
     results = Dict()
-    if isfile(resultsfile)
-        results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -499,8 +499,7 @@ function two_stage_free_enhanced(sim, make_model)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
         approxevec = Phi*real(evec)
     end
-    @show eval
-
+    
     # Enhance with static solution instead of the last eigenvector
     #timing["Additional vectors"] = @elapsed begin
     #    C = model["C"]
@@ -613,25 +612,25 @@ function two_stage_free_enhanced(sim, make_model)
     store_matrix(rd["eigenvalues"]["file"], eval)
 
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
 
 function harmonic_vibration_modal(cdir, sim, make_model)
-    @info "Harmonic Vibration (modal)"
+    @info "Modal Harmonic Vibration"
     prop = retrieve_json(joinpath(cdir, sim))
     
-    resultsdir = joinpath(cdir, prop["resultsdir"])
-    mkpath(resultsdir)
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
     resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
-    matricesdir = joinpath(cdir, prop["matricesdir"])
-    mkpath(matricesdir)
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
 
-    if !isfile(resultsfile)
+    if !isfile(joinpath(cdir, resultsfile))
         @error "Need the results"
     end
-    results = retrieve_json(resultsfile)
+    results = retrieve_json(joinpath(cdir, resultsfile))
 
     timing = Dict{String, FFlt}()
 
@@ -644,7 +643,7 @@ function harmonic_vibration_modal(cdir, sim, make_model)
     C = model["C"]
     F = model["F"]
     f = results["reduced_basis"]["basis"]["file"]
-    evecs = retrieve_matrix(f)
+    evecs = retrieve_matrix(joinpath(cdir, f))
     @info "Number of modes: $(size(evecs, 2))"
 
     transfm(m, evecs) = (evecs' * m * evecs)
@@ -690,27 +689,28 @@ function harmonic_vibration_modal(cdir, sim, make_model)
 
     file = joinpath(resultsdir, with_extension(sim * "-frf", "h5"))
     rd["frf"] = Dict("file"=>file)
-    store_matrix(rd["frf"]["file"], frf)
+    store_matrix(joinpath(cdir, rd["frf"]["file"]), frf)
 
     results["harmonic_vibration"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
 
-function harmonic_vibration_direct(sim, make_model)
-    @info "Harmonic Vibration (direct)"
-    prop = retrieve_json(sim)
-    
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
+function harmonic_vibration_direct(cdir, sim, make_model)
+    @info "Direct Harmonic Vibration"
+    prop = retrieve_json(joinpath(cdir, sim))
+
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
 
     results = Dict()
-    if isfile(resultsfile)
-        results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
-    
 
     timing = Dict{String, FFlt}()
 
@@ -753,27 +753,29 @@ function harmonic_vibration_direct(sim, make_model)
     timing["Total"] = timing["Problem setup"] + timing["Frequency sweep"]
     rd["timing"] = timing
 
-    mkpath(prop["resultsdir"])
-    rd["frf"] = Dict("file"=>joinpath(prop["resultsdir"], with_extension(sim * "-frf", "h5")))
-    store_matrix(rd["frf"]["file"], frf)
+    file = joinpath(resultsdir, with_extension(sim * "-frf", "h5"))
+    rd["frf"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["frf"]["file"]), frf)
 
     results["harmonic_vibration"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
 
-function wyd_ritz(sim, make_model)
+function wyd_ritz(cdir, sim, make_model)
     @info "WYD Ritz"
-    prop = retrieve_json(sim)
+    prop = retrieve_json(joinpath(cdir, sim))
 
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
-
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
+    
     results = Dict()
-    if isfile(resultsfile)  
-    results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -840,12 +842,12 @@ function wyd_ritz(sim, make_model)
     timing["Total"] = timing["Problem setup"] + timing["Factorize stiffness"] + timing["Ritz-vector matrix"]
     rd["timing"] = timing
 
-    mkpath(prop["matricesdir"])
-    rd["basis"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-Phi", "h5")))
-    store_matrix(rd["basis"]["file"], Phi)
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    rd["basis"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), Phi)
 
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
@@ -859,8 +861,8 @@ function lanczos_ritz(sim, make_model)
     resultsfile = joinpath(prop["resultsdir"], rf)
 
     results = Dict()
-    if isfile(resultsfile)  
-    results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+    results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -931,27 +933,29 @@ function lanczos_ritz(sim, make_model)
     timing["Total"] = timing["Problem setup"] + timing["Factorize stiffness"] + timing["Ritz-vector matrix"]
     rd["timing"] = timing
 
-    mkpath(prop["matricesdir"])
-    rd["basis"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-Phi", "h5")))
-    store_matrix(rd["basis"]["file"], Phi)
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    rd["basis"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), evec)
 
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end
 
-function two_stage_wyd_ritz(sim, make_model)
-    @info "WYD Ritz (Reduced)"
-    prop = retrieve_json(sim)
+function two_stage_wyd_ritz(cdir, sim, make_model)
+    @info "Two-stage WYD Ritz"
+    prop = retrieve_json(joinpath(cdir, sim))
 
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
-
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
+    
     results = Dict()
-    if isfile(resultsfile)
-        results = retrieve_json(resultsfile)
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -1052,12 +1056,12 @@ function two_stage_wyd_ritz(sim, make_model)
     timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["Factorize stiffness"] + timing["Ritz-vector matrix"]
     rd["timing"] = timing
 
-    mkpath(prop["matricesdir"])
-    rd["basis"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-Phi", "h5")))
-    store_matrix(rd["basis"]["file"], Phi)
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    rd["basis"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), Phi)
     
     results["reduced_basis"] = rd
-    store_json(resultsfile, results)
+    store_json(joinpath(cdir, resultsfile), results)
 
     true
 end

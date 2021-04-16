@@ -8,13 +8,13 @@ using FinEtoolsRapidHarmonicVA
 include("examples/twisted_bar/define_sim.jl")
 
 reduction_methods = ["free", "two_stage_free", "wyd_ritz", "two_stage_wyd_ritz"]
-reduction_methods = ["free", "two_stage_free"]
+# reduction_methods = ["free", "two_stage_free"],
 
 @info "Burn in "
 
 # Burn in
-for mesh_n in [4,]
-    for nmodes in [50, ]
+for mesh_n in [4, ]
+    for nmodes in [25, ]
      
         for reduction_method in reduction_methods
            sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method)
@@ -24,16 +24,16 @@ for mesh_n in [4,]
     end
 end
 
-# @info "Running simulations"
+@info "Running simulations"
 
-# #Now for real
-# for mesh_n in [4, ]
-#     for nmodes in [50, 100, 200]
+#Now for real
+for mesh_n in [4, ]
+    for nmodes in [25, 50]
 
-#         for reduction_method in reduction_methods
-#             sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method)
-#             solve(sim, make_model)
-#         end
+        for reduction_method in reduction_methods
+            sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method)
+            solve(sim_directory(), sim, make_model)
+        end
 
-#     end
-# end
+    end
+end
