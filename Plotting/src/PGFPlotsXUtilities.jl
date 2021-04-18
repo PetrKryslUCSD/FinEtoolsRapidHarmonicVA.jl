@@ -193,7 +193,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         frf = hvd["frf"]
         mf = frf["file"]
         @show mf
-        m = retrieve_matrix(mf)
+        m = retrieve_matrix(joinpath(cdir, mf))
         freal = real.(m)
         fimag = imag.(m)
         # Amplitude graph
@@ -221,7 +221,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         frequencies = hvd["sweep_frequencies"]
         frf = hvd["frf"]
         mf = frf["file"]
-        m = retrieve_matrix(mf)
+        m = retrieve_matrix(joinpath(cdir, mf))
         freal = real.(m)
         fimag = imag.(m)
         # Amplitude graph
