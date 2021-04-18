@@ -43,3 +43,59 @@ function correlation(sim1 = "sim1", sim2 = "sim2")
     return dot(m1, m2) / norm(m1) / norm(m2)
 end
 
+
+function reduced_basis_technique(reduction_method)
+    if reduction_method == "free"
+        return "Full VB"
+    elseif reduction_method == "two_stage_free"
+        return "2S VB"
+    elseif reduction_method == "two_stage_free_enhanced"
+        return "Red VB/enh"
+    elseif reduction_method == "wyd_ritz"
+        return "WYD"
+    elseif reduction_method == "lanczos_ritz"
+        return "LNC"
+    elseif reduction_method == "two_stage_wyd_ritz"
+        return "2S WYD"
+    else
+        return ""
+    end
+end
+
+
+function reduced_basis_style(reduction_method)
+    if reduction_method == "free"
+        return ("red", "diamond")
+    elseif reduction_method == "two_stage_free"
+        return ("green", "x")
+    elseif reduction_method == "wyd_ritz"
+         return ("blue", "o")
+    elseif reduction_method == "lanczos_ritz"
+         return ("brown", "square")
+    elseif reduction_method == "two_stage_free_enhanced"
+        return ("magenta", "star")
+   elseif reduction_method == "two_stage_wyd_ritz"
+        return ("cyan", "star")
+    elseif reduction_method == "none"
+         return ("black", "+")
+    else
+        return ("", "")
+    end
+end
+
+
+function reduced_basis_time(reduction_method, tims)
+    if reduction_method == "free"
+        return sum([tims[k] for k in ["EV problem"]]) 
+    elseif reduction_method == "two_stage_free"
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction"]])
+    elseif reduction_method == "two_stage_free_enhanced"
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
+    elseif reduction_method == "wyd_ritz"
+        return sum([tims[k] for k in ["Factorize stiffness", "Ritz-vector matrix"]])
+    elseif reduction_method == "two_stage_wyd_ritz"
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "Factorize stiffness", "Ritz-vector matrix"]])
+    else
+        return 0.0
+    end
+end
