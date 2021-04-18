@@ -2,7 +2,7 @@
 # Then execute the following file line by line.
 using FinEtoolsRapidHarmonicVA
 
-include("../examples/twisted_bar/define_sim.jl")
+include("./define_sim.jl")
 
 using Plotting
 using Plotting: plot_frf, plot_timing
@@ -11,10 +11,10 @@ using FinEtoolsRapidHarmonicVA
 
 
 methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
-methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
+#methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
 
-for mesh_n in [6, ]
-    for nmodes in [50, ]
+for mesh_n in [8, ]
+    for nmodes in [25, ]
         
         sims = []
         for (reduction_method, harmonic_method) in methods
@@ -23,6 +23,7 @@ for mesh_n in [6, ]
         end
         
         plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
+        plot_frf_errors(sim_directory(), sims, "frf-errors-m$(mesh_n)-n$(nmodes).pdf")
         
         #plot_frf_errors([sim0, sim1, sim2, sim3,  ], "frf-errors-m$(mesh_n)-n$(nmodes).pdf")
         #plot_frf_errors([sim1,], "frf-m$(mesh_n)-n$(nmodes).pdf")
