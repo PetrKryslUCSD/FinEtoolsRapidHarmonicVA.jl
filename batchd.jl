@@ -11,7 +11,7 @@ include("examples/twisted_bar/define_sim.jl")
 
 #Now for real
 nmodes = 0
-for mesh_n in [4, 6, 8, 10]
+for mesh_n in [4, 6, 8]
         
         sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = "none", harmonic_method = "direct")
         solve(sim_directory(), sim, make_model)
