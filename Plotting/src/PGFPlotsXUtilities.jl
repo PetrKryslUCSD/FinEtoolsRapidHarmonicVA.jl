@@ -126,7 +126,7 @@ function plot_times_reduced_basis(list_of_sim_lists = [["sim1",],], filename = "
         s = nothing
         for sim in sim_list
             prop = retrieve_json(sim)
-            @show s = _reduced_basis_style(prop["reduction_method"])
+            s = _reduced_basis_style(prop["reduction_method"])
             # Load the data for the graph of the FRF
             j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
             results = retrieve_json(j)
@@ -192,7 +192,6 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         direct_frequencies = hvd["sweep_frequencies"]
         frf = hvd["frf"]
         mf = frf["file"]
-        @show mf
         m = retrieve_matrix(joinpath(cdir, mf))
         freal = real.(m)
         fimag = imag.(m)
@@ -227,7 +226,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         # Amplitude graph
         ampls = abs.(freal + 1im*fimag)./phun("mm")
         @assert length(ampls) == length(frequencies)
-        @show s = _reduced_basis_style(prop["reduction_method"])
+        s = _reduced_basis_style(prop["reduction_method"])
         @pgf p = PGFPlotsX.Plot(
         {
         color = s[1],
