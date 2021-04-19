@@ -5,7 +5,7 @@ include("./define_sim.jl")
 
 using PGFPlotsX
 using Plotting
-using Plotting: reduced_basis_time
+using Plotting: reduced_basis_time, reduced_basis_technique
 using Plotting: plot_frf, plot_timing
 using Plotting: plot_timing_reduced_basis, plot_frf_errors, plot_frf_amplitudes
 using FinEtoolsRapidHarmonicVA
@@ -17,12 +17,13 @@ stage = "reduced_basis"
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
 
 plots = []
+legends = []
 for (reduction_method, harmonic_method) in the_methods
 
 
     timings = []
-    for nmodes in [25, 50, 100, 200, ]
-        for mesh_n in [4, 6, 8, 10, ]
+    for nmodes in [25, 50, 100,  ]
+        for mesh_n in [4, 6, 8, 10, 12 ]
             sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method)
             prop = retrieve_json(joinpath(cdir, sim))
             j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
@@ -38,34 +39,36 @@ for (reduction_method, harmonic_method) in the_methods
             push!(timings, (nmodes = nmodes, mesh_n = mesh_n, number_of_nodes = number_of_nodes, t))
         end
     end
-    @show timings
+    #@show timings
 
-    l = filter(t -> t.nmodes == 25, timings)
+    l = filter(t -> t.nmodes == 100, timings)
     meshes = [t.mesh_n for t in l] 
     c = [(3*t.number_of_nodes, t.t) for t in l] 
 
     @pgf p = PGFPlotsX.Plot(Coordinates(c));
     push!(plots, p)
+    @pgf leg = LegendEntry(reduced_basis_technique(reduction_method))
+    push!(legends, leg)
 end
 
-@pgf ax = Axis(
+@pgf ax = LogLogAxis(
     {
         height = "8cm",
         width = "9cm",
-        ymode = "log",
+        log_basis_y = 10,
         enlargelimits = "upper",
         enlarge_x_limits = "true",
         legend_style = {
-            at = Coordinate(0.5, 0.5),
+            at = Coordinate(0.5, 1.01),
             anchor = "south",
             legend_columns = -1
         },
         xlabel = "Degrees of freedom [ND]",
         ylabel = "Time [s]",
         nodes_near_coords,
-        nodes_near_coords_align={vertical}
+        nodes_near_coords_align={horizontal}
     },
-    plots...
+    plots..., legends...
 );
 display(ax)
 #pgfsave(filename, ax)
