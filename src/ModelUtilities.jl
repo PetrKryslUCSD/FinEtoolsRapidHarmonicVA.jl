@@ -802,6 +802,7 @@ function wyd_ritz(cdir, sim, make_model)
     end
 
     timing["Ritz-vector matrix"] = @elapsed begin
+        # Refer for instance to Bayo, Wilson 1984, Joo et al 1989
 
         # Allocate the transformation matrix
         Phi = fill(0.0, size(K, 1), nmodes)
@@ -831,6 +832,17 @@ function wyd_ritz(cdir, sim, make_model)
         #for i in 1:nmodes, j in 1:nmodes
         #    @show i, j, dot(view(Phi, :, j), view(temp, :, i))
         #end
+        maxoff = 0.0
+        for i in 1:size(Phi, 2)
+            for j in i:size(Phi, 2)
+                m = dot(view(Phi, :, i), M * view(Phi, :, j))
+                if i != j
+                    maxoff = max(maxoff, abs(m))
+                end
+                #@assert (i == j ? abs(1.0 - dot(view(Phi, :, i), M * view(Phi, :, j))) : abs(0.0 - dot(view(Phi, :, i), M * view(Phi, :, j)))) < 1.0e-6 
+            end
+        end
+        @show maxoff
     end
     
 
@@ -852,17 +864,19 @@ function wyd_ritz(cdir, sim, make_model)
     true
 end
 
-function lanczos_ritz(sim, make_model)
+function lanczos_ritz(cdir, sim, make_model)
     @info "Lanczos Ritz"
-    prop = retrieve_json(sim)
+    prop = retrieve_json(joinpath(cdir, sim))
 
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
-
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
+    
     results = Dict()
     if isfile(joinpath(cdir, resultsfile))
-    results = retrieve_json(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
     end
 
     timing = Dict{String, FFlt}()
@@ -889,39 +903,37 @@ function lanczos_ritz(sim, make_model)
     end
 
     timing["Ritz-vector matrix"] = @elapsed begin
+        # Refer for instance to Nour-Omid, Clough 1984.
+        # The implementation below follows Kim et al 2003.
+        # The problem with the two-term recurrence is that it does
+        # not manage to maintain mass-orthogonality of the generated vectors.
 
         # Allocate the transformation matrix
-        Phi = fill(0.0, size(K, 1), nmodes)
-        qj1 = fill(0.0, size(K, 1))
-        qj = fill(0.0, size(K, 1))
-        rj = fill(0.0, size(K, 1))
-        pj = fill(0.0, size(K, 1))
+            Phi = fill(0.0, size(K, 1), nmodes)
+            br = fill(0.0, size(K, 1))
 
-        rj .= Kf \ F
-        beta = sqrt(dot(rj, M*rj))
-        qj .= rj ./ beta
-        pj .= M*qj
-        
-        Phi[:, 1] .= qj
-        
-        for n in 1:nmodes-1
-            rj .= Kf \ pj
-            rj .-= beta .* qj1
-            alpha = (dot(pj, rj))
-            rj .-= alpha .* qj
-            pj .= M*rj
-            beta = sqrt(dot(pj, rj))
-            qj1 .= qj
-            qj .= rj ./ beta
-            pj .= pj ./ beta
-            Phi[:, n+1] .= qj
-        end
-        for i in 1:size(Phi, 2)
-            for j in i:size(Phi, 2)
-                @show i, j, dot(view(Phi, :, i), M * view(Phi, :, j))
-                #@assert (i == j ? abs(1.0 - dot(view(Phi, :, i), M * view(Phi, :, j))) : abs(0.0 - dot(view(Phi, :, i), M * view(Phi, :, j)))) < 1.0e-6 
+            br .= Kf \ F
+            beta = sqrt(dot(br, M*br))
+            Phi[:, 1] .= br ./ beta
+            
+            for j in 1:nmodes-1
+                @show j
+                qj = view(Phi, :, j)
+                br .= Kf \ (M*qj)
+                alpha = dot(br, M*qj)
+                br .-= alpha.*qj
+                if j > 1
+                    br .-= beta*view(Phi, :, j-1)
+                end
+                beta = sqrt(dot(br, M*br))
+                Phi[:, j+1] .= br ./ beta
+                #for i in 1:j
+                #    for k in i:j
+                #        @show i, k, dot(view(Phi, :, i), M * view(Phi, :, k))
+                #    end
+                #end
             end
-        end
+            
     end
     
 
@@ -935,7 +947,7 @@ function lanczos_ritz(sim, make_model)
 
     file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
     rd["basis"] = Dict("file"=>file)
-    store_matrix(joinpath(cdir, rd["basis"]["file"]), evec)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), Phi)
 
     results["reduced_basis"] = rd
     store_json(joinpath(cdir, resultsfile), results)
