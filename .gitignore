@@ -27,3 +27,5 @@ Manifest.toml
 *.json
 *.h5
 
+*.sublime-workspace
+
