@@ -93,6 +93,8 @@ function reduced_basis_time(reduction_method, tims)
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     elseif reduction_method == "wyd_ritz"
         return sum([tims[k] for k in ["Factorize stiffness", "Ritz-vector matrix"]])
+    elseif reduction_method == "lanczos_ritz"
+        return sum([tims[k] for k in ["Factorize stiffness", "Ritz-vector matrix"]])
     elseif reduction_method == "two_stage_wyd_ritz"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "Factorize stiffness", "Ritz-vector matrix"]])
     else
