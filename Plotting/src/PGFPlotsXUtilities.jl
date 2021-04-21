@@ -24,8 +24,8 @@ function plot_timing_reduced_basis(cdir, sim_list = ["sim1"], filename = "plot.p
         if stage in keys(results)
             sd = results[stage] 
             tims = sd["timing"]
-            t = _reduced_basis_time(prop["reduction_method"], tims)
-            push!(c, (_reduced_basis_technique(prop["reduction_method"]), t))
+            t = reduced_basis_time(prop["reduction_method"], tims)
+            push!(c, (reduced_basis_technique(prop["reduction_method"]), t))
         end
     end
     @pgf p = PGFPlotsX.Plot(Coordinates(c))
@@ -71,14 +71,14 @@ function plot_times_reduced_basis(list_of_sim_lists = [["sim1",],], filename = "
         s = nothing
         for sim in sim_list
             prop = retrieve_json(sim)
-            s = _reduced_basis_style(prop["reduction_method"])
+            s = reduced_basis_style(prop["reduction_method"])
             # Load the data for the graph of the FRF
             j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
             results = retrieve_json(j)
             if stage in keys(results)
                 sd = results[stage] 
                 tims = sd["timing"]
-                t = _reduced_basis_time(prop["reduction_method"], tims)
+                t = reduced_basis_time(prop["reduction_method"], tims)
                 nm = sd["number_of_modes"]
                 push!(c, (nm, t))
             end
@@ -115,18 +115,18 @@ function plot_times_reduced_basis(list_of_sim_lists = [["sim1",],], filename = "
     true
 end
 
-function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf")
-    _plot_frf(cdir, sim_list, filename, :errors)
+function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf", range = [-Inf, Inf])
+    _plot_frf(cdir, sim_list, filename, :errors, range)
 end
 
-function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf")
-    _plot_frf(cdir, sim_list, filename, :amplitudes)
+function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf", range = [-Inf, Inf])
+    _plot_frf(cdir, sim_list, filename, :amplitudes, range)
 end
 
-function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors)
+function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf])
     objects = []
     
-    direct_frequencies, direct_ampls = let sim = sim_list[1]
+    direct_frequencies, direct_ampls, range_indexes = let sim = sim_list[1]
         prop = retrieve_json(joinpath(cdir, sim))
 
         # Load the data for the graph of the FRF
@@ -143,17 +143,21 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         # Amplitude graph
         direct_ampls = abs.(freal + 1im*fimag)./phun("mm")
         @assert length(direct_ampls) == length(direct_frequencies)
+        range_indexes = [i for i in 1:length(direct_frequencies) 
+            if range[1] <= direct_frequencies[i] <= range[2]] 
         @pgf p = PGFPlotsX.Plot(
         {
         color = "black"
         },
-        Coordinates([v for v in  zip(direct_frequencies, direct_ampls)])
+        Coordinates([v for v in  zip(direct_frequencies[range_indexes], direct_ampls[range_indexes])])
         )
         push!(objects, p)
         push!(objects, LegendEntry("Direct"))
         
-        direct_frequencies, direct_ampls
+        direct_frequencies, direct_ampls, range_indexes
     end
+
+
 
     for sim in sim_list[2:end]
         prop = retrieve_json(joinpath(cdir, sim))
@@ -171,7 +175,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         # Amplitude graph
         ampls = abs.(freal + 1im*fimag)./phun("mm")
         @assert length(ampls) == length(frequencies)
-        s = _reduced_basis_style(prop["reduction_method"])
+        s = reduced_basis_style(prop["reduction_method"])
         @pgf p = PGFPlotsX.Plot(
         {
         color = s[1],
@@ -179,12 +183,12 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         mark_repeat = 15,
         },
         what == :errors ? 
-        Coordinates([v for v in  zip(frequencies, abs.(direct_ampls.-ampls))]) : 
-        Coordinates([v for v in  zip(frequencies, ampls)])
+        Coordinates([v for v in  zip(frequencies[range_indexes], abs.(direct_ampls[range_indexes] .- ampls[range_indexes]))]) : 
+        Coordinates([v for v in  zip(frequencies[range_indexes], ampls[range_indexes])])
 
         )
         push!(objects, p)
-        push!(objects, LegendEntry(_reduced_basis_technique(prop["reduction_method"])))
+        push!(objects, LegendEntry(reduced_basis_technique(prop["reduction_method"])))
     end
 
     @pgf ax = Axis(
@@ -262,7 +266,7 @@ function plot_frf_errors_direct(sim_list = ["sim1"], filename = "plot.pdf")
         # Amplitude graph
         ampls = abs.(freal + 1im*fimag)./phun("mm")
         @assert length(ampls) == length(frequencies)
-        s = _reduced_basis_style(prop["reduction_method"])
+        s = reduced_basis_style(prop["reduction_method"])
 
         @pgf p = PGFPlotsX.Plot(
         {
