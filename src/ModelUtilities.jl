@@ -832,17 +832,17 @@ function wyd_ritz(cdir, sim, make_model)
         #for i in 1:nmodes, j in 1:nmodes
         #    @show i, j, dot(view(Phi, :, j), view(temp, :, i))
         #end
-        maxoff = 0.0
-        for i in 1:size(Phi, 2)
-            for j in i:size(Phi, 2)
-                m = dot(view(Phi, :, i), M * view(Phi, :, j))
-                if i != j
-                    maxoff = max(maxoff, abs(m))
-                end
-                #@assert (i == j ? abs(1.0 - dot(view(Phi, :, i), M * view(Phi, :, j))) : abs(0.0 - dot(view(Phi, :, i), M * view(Phi, :, j)))) < 1.0e-6 
-            end
-        end
-        @show maxoff
+        #maxoff = 0.0
+        #for i in 1:size(Phi, 2)
+        #    for j in i:size(Phi, 2)
+        #        m = dot(view(Phi, :, i), M * view(Phi, :, j))
+        #        if i != j
+        #            maxoff = max(maxoff, abs(m))
+        #        end
+        #        #@assert (i == j ? abs(1.0 - dot(view(Phi, :, i), M * view(Phi, :, j))) : abs(0.0 - dot(view(Phi, :, i), M * view(Phi, :, j)))) < 1.0e-6 
+        #    end
+        #end
+        #@show maxoff
     end
     
 
@@ -911,21 +911,24 @@ function lanczos_ritz(cdir, sim, make_model)
         # Allocate the transformation matrix
             Phi = fill(0.0, size(K, 1), nmodes)
             br = fill(0.0, size(K, 1))
+            Ms = fill(0.0, size(K, 1))
 
             br .= Kf \ F
-            beta = sqrt(dot(br, M*br))
+            mul!(Ms, M, br)
+            beta = sqrt(dot(br, Ms))
             Phi[:, 1] .= br ./ beta
             
             for j in 1:nmodes-1
-                @show j
                 qj = view(Phi, :, j)
-                br .= Kf \ (M*qj)
-                alpha = dot(br, M*qj)
-                br .-= alpha.*qj
+                mul!(Ms, M, qj)
+                br .= Kf \ Ms
+                alpha = dot(br, Ms)
+                br .-= alpha .* qj
                 if j > 1
-                    br .-= beta*view(Phi, :, j-1)
+                    br .-= beta .* view(Phi, :, j-1)
                 end
-                beta = sqrt(dot(br, M*br))
+                mul!(Ms, M, br)
+                beta = sqrt(dot(br, Ms))
                 Phi[:, j+1] .= br ./ beta
                 #for i in 1:j
                 #    for k in i:j
