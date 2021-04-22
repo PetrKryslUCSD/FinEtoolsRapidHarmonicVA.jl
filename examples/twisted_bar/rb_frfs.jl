@@ -14,8 +14,8 @@ using FinEtoolsRapidHarmonicVA
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("lanczos_ritz", "modal")]
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("lanczos_ritz", "modal")]
 
-for mesh_n in [6, ]
-    for nmodes in [50, ]
+for mesh_n in [12, ]
+    for nmodes in [200, ]
         
         sims = []
         for (reduction_method, harmonic_method) in the_methods
@@ -26,7 +26,7 @@ for mesh_n in [6, ]
         #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf", [190, 210])
         #
         plot_frf_errors(sim_directory(), sims, "frf-errors-m$(mesh_n)-n$(nmodes).pdf")
-        
+
     end
 end
 

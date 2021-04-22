@@ -7,8 +7,8 @@ using FinEtoolsRapidHarmonicVA
 
 include("examples/twisted_bar/define_sim.jl")
 
-reduction_methods = ["free", "two_stage_free", "wyd_ritz", "two_stage_wyd_ritz"]
-# reduction_methods = ["free", "two_stage_free"],
+#reduction_methods = ["free", "two_stage_free", "wyd_ritz", "two_stage_wyd_ritz"]
+reduction_methods = ["lanczos_ritz", "wyd_ritz"]
 
 @info "Burn in "
 
@@ -27,7 +27,7 @@ end
 @info "Running simulations"
 
 #Now for real
-for mesh_n in [4, 6, 8]
+for mesh_n in [4, 6, ]
     for nmodes in [25, 50]
 
         for reduction_method in reduction_methods
