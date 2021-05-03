@@ -147,10 +147,11 @@ function two_stage_free(cdir, sim, make_model)
     fmax = prop["fmax"]
     nbf1maxclamp = prop["nbf1maxclamp"]
 
+    @show keys(model)
     mor = nothing
     timing["Partitioning"] = @elapsed begin
         partitioning = Int[]
-        if model["partitioning_method"] in keys(model) && 
+        if "partitioning_method" in keys(model) && 
             model["partitioning_method"] == "metis"
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
@@ -679,7 +680,11 @@ function harmonic_vibration_modal(cdir, sim, make_model)
 
     fens = model["fens"]
     u = model["u"]
-    sensornl = selectnode(fens, nearestto=prop["sensor_location"])
+    if "sensor_location" in keys( prop )
+        sensornl = selectnode(fens, nearestto=prop["sensor_location"])
+    else
+        sensornl = model["sensor_node"]
+    end
     sensordir = prop["sensor_direction"]
     sensorndof = u.dofnums[sensornl, sensordir]
 
@@ -1017,7 +1022,7 @@ function two_stage_wyd_ritz(cdir, sim, make_model)
     mor = nothing
     timing["Partitioning"] = @elapsed begin
         partitioning = Int[]
-        if model["partitioning_method"] in keys(model) && 
+        if "partitioning_method" in keys(model) && 
             model["partitioning_method"] == "metis"
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
