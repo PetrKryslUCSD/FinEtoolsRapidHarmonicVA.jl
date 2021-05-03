@@ -1,3 +1,4 @@
+using Metis
 import LinearAlgebra: eigen, qr, norm, mul!, dot, cholesky, Symmetric
 using Statistics
 using SparseArrays
@@ -85,7 +86,7 @@ function free(cdir, sim, make_model)
     true
 end
 
-function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension = Inf)
+function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension = Inf, nbf1maxclamp = (3, 7))
     V, N, E, nu, rho, fmax, alpha
     c = sqrt(E / 2 / (1 + nu) / rho)
     lambda = c / fmax
@@ -107,8 +108,8 @@ function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension
     # sufficient number of such functions to generate a reasonably rich
     # approximation, and to prevent a hugely expensive computation with too
     # many basis functions.
-    nbf1max = nbf1max < 3 ? 3 : nbf1max
-    nbf1max = nbf1max > 7 ? 7 : nbf1max
+    nbf1max = nbf1max < nbf1maxclamp[1] ? nbf1maxclamp[1] : nbf1max
+    nbf1max = nbf1max > nbf1maxclamp[2] ? nbf1maxclamp[2] : nbf1max
     return Nc, nbf1max
 end
 
@@ -147,8 +148,9 @@ function two_stage_free(cdir, sim, make_model)
     fmax = prop["fmax"]
     alpha = prop["alpha"]
     smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
 
-    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension)
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
     
     @info "Number of clusters $Nc, number of functions $nbf1max"
 
@@ -225,6 +227,8 @@ function two_stage_free(cdir, sim, make_model)
 
     rd["number_of_nodes"] = count(fens)
     rd["number_of_modes"] = nmodes
+    rd["number_of_clusters"] = Nc
+    rd["nbf1max"] = nbf1max
 
     rd["frequencies"] = approxfs
     timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"]
@@ -276,8 +280,9 @@ function conc_reduced(sim, make_model)
     fmax = prop["fmax"]
     alpha = prop["alpha"]
     smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
 
-    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension)
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
     
     @info "Number of clusters $Nc, number of functions $nbf1max"
 
@@ -348,8 +353,9 @@ function redu_free_vibration_alt(sim, make_model)
     fmax = prop["fmax"]
     alpha = prop["alpha"]
     smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
 
-    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension)
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
     
     @info "Number of clusters $Nc, number of functions $nbf1max"
 
@@ -379,7 +385,7 @@ function redu_free_vibration_alt(sim, make_model)
     
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Kr + mass_shift*Mr, Mr; nev=nmodes, which=:SM)
+        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
         
     end
@@ -412,6 +418,8 @@ function redu_free_vibration_alt(sim, make_model)
 
     rd["number_of_nodes"] = count(fens)
     rd["number_of_modes"] = nmodes
+    rd["number_of_clusters"] = Nc
+    rd["nbf1max"] = nbf1max
 
     rd["frequencies"] = approxfs
     timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"]
@@ -462,8 +470,9 @@ function two_stage_free_enhanced(sim, make_model)
     fmax = prop["fmax"]
     alpha = prop["alpha"]
     smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
 
-    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension)
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
     
     @info "Number of clusters $Nc, number of functions $nbf1max"
 
@@ -495,7 +504,7 @@ function two_stage_free_enhanced(sim, make_model)
     @info "Transformation matrix dimensions $(size(Phi))"
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Kr + mass_shift*Mr, Mr; nev=nmodes, which=:SM)
+        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
         approxevec = Phi*real(evec)
     end
@@ -600,6 +609,8 @@ function two_stage_free_enhanced(sim, make_model)
 
     rd["number_of_nodes"] = count(fens)
     rd["number_of_modes"] = nmodes
+    rd["number_of_clusters"] = Nc
+    rd["nbf1max"] = nbf1max
 
     rd["frequencies"] = approxfs
     timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"]
@@ -984,22 +995,34 @@ function two_stage_wyd_ritz(cdir, sim, make_model)
 
     femm = model["femm"]
     geom = model["geom"]
-    V = integratefunction(femm, geom, (x) ->  1.0)
-
-    N = count(fens)
-    E = prop["E"]
-    nu = prop["nu"]
-    rho = prop["rho"]
-    fmax = prop["fmax"]
-    alpha = prop["alpha"]
-    smallestdimension = prop["smallestdimension"]
-
-    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension)
-    
-    @info "Number of clusters $Nc, number of functions $nbf1max"
 
     timing["Partitioning"] = @elapsed begin
-        partitioning = nodepartitioning(fens, Nc)
+        partitioning = Int[]
+        if model["partitioning_method"] in keys(model) && 
+            model["partitioning_method"] == "metis"
+            C = connectionmatrix(femm, count(fens))
+            g = Metis.graph(C; check_hermitian=true)
+            N = count(fens)
+            @show Nc = Int(round(N/1000))
+            partitioning = Metis.partition(g, Nc; alg = :KWAY)
+        else # Default: Recursive Inertial Bisection
+            V = integratefunction(femm, geom, (x) ->  1.0)
+
+            N = count(fens)
+            E = prop["E"]
+            nu = prop["nu"]
+            rho = prop["rho"]
+            fmax = prop["fmax"]
+            alpha = prop["alpha"]
+            smallestdimension = prop["smallestdimension"]
+            nbf1maxclamp = prop["nbf1maxclamp"]
+
+            Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
+
+            @info "Number of clusters $Nc, number of functions $nbf1max"
+
+            partitioning = nodepartitioning(fens, Nc)
+        end
         mor = CoNCData(fens, partitioning)
     end
 
@@ -1067,6 +1090,8 @@ function two_stage_wyd_ritz(cdir, sim, make_model)
 
     rd["number_of_nodes"] = count(fens)
     rd["number_of_modes"] = nmodes
+    rd["number_of_clusters"] = Nc
+    rd["nbf1max"] = nbf1max
 
     timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["Factorize stiffness"] + timing["Ritz-vector matrix"]
     rd["timing"] = timing
