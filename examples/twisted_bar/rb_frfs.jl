@@ -11,10 +11,10 @@ using Plotting: plot_timing_reduced_basis, plot_frf_errors, plot_frf_amplitudes
 using FinEtoolsRapidHarmonicVA
 
 
-the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("lanczos_ritz", "modal")]
-the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("lanczos_ritz", "modal")]
+the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"),] #  ("lanczos_ritz", "modal")
+#the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("lanczos_ritz", "modal")]
 
-for mesh_n in [12, ]
+for mesh_n in [8, ]
     for nmodes in [200, ]
         
         sims = []

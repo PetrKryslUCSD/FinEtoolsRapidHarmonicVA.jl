@@ -14,16 +14,17 @@ using FinEtoolsRapidHarmonicVA
 cdir = sim_directory()
 stage = "reduced_basis"
 
-the_methods = [("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("lanczos_ritz", "modal")]
+the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
 
+for_nmodes = 200
 plots = []
 legends = []
 for (reduction_method, harmonic_method) in the_methods
 
 
     timings = []
-    for nmodes in [25, 50, ]
-        for mesh_n in [4, 6, ]
+    for nmodes in [for_nmodes,  ]
+        for mesh_n in [4, 6, 8, 10, 12, 14]
             sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method)
             prop = retrieve_json(joinpath(cdir, sim))
             j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
@@ -41,14 +42,16 @@ for (reduction_method, harmonic_method) in the_methods
     end
     #@show timings
 
-    l = filter(t -> t.nmodes == 50, timings)
+    l = filter(t -> t.nmodes == for_nmodes, timings)
     meshes = [t.mesh_n for t in l] 
     c = [(3*t.number_of_nodes, t.t) for t in l] 
 
     s = reduced_basis_style(reduction_method)
     @pgf p = PGFPlotsX.Plot({
         color = s[1],
-        mark = s[2]
+        mark = s[2], 
+        mark_size = 4,
+        line_width = 2
         }, Coordinates(c));
     push!(plots, p)
     @pgf leg = LegendEntry(reduced_basis_technique(reduction_method))
