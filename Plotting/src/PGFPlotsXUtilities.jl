@@ -147,7 +147,8 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
             if range[1] <= direct_frequencies[i] <= range[2]] 
         @pgf p = PGFPlotsX.Plot(
         {
-        color = "black"
+        color = "black",
+        line_width  = 0.7
         },
         Coordinates([v for v in  zip(direct_frequencies[range_indexes], direct_ampls[range_indexes])])
         )
@@ -181,6 +182,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         color = s[1],
         mark = s[2],
         mark_repeat = 15,
+        line_width = 0.7
         },
         what == :errors ? 
         Coordinates([v for v in  zip(frequencies[range_indexes], abs.(direct_ampls[range_indexes] .- ampls[range_indexes]))]) : 
