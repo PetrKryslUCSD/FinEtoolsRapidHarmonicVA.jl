@@ -7,7 +7,7 @@ function sim_directory()
     return dirname(@__FILE__())
 end
 
-function make_model(prop)
+function make_mesh(prop)
     
     n = prop["mesh_n"]
     L, W, t = prop["dimensions"]
@@ -26,6 +26,12 @@ function make_model(prop)
         a = fens.xyz[i,1]/L*(pi/2); y = fens.xyz[i,2]-(W/2); z = fens.xyz[i,3]-(t/2);
         fens.xyz[i,:] = [fens.xyz[i,1], y*cos(a)-z*sin(a), y*sin(a)+z*cos(a)];
     end
+    return fens, fes, clampedl, subset(boundaryfes, loadedl)
+end
+
+function make_model(prop)
+    
+    fens, fes, clampedl, lbdfes = make_mesh(prop)
 
     # Make fields
     geom = NodalField(fens.xyz)
@@ -71,7 +77,7 @@ function make_model(prop)
     C = a0v * mass(femmc, geom, u) + a1v * stiffness(femmc, geom, u)
 
     fi = ForceIntensity(FFlt[0.0, 0.0, 0.01*phun("MPa")]);
-    loadedbfemm  = FEMMBase(IntegDomain(subset(boundaryfes,loadedl), TriRule(1)))
+    loadedbfemm  = FEMMBase(IntegDomain(lbdfes, TriRule(1)))
     F = distribloads(loadedbfemm, geom, u, fi, 2);
     
     model = Dict()
@@ -87,6 +93,15 @@ function make_model(prop)
 
     return model
 end # 
+
+function exportgraphics(cdir, sim)
+    prop = retrieve_json(joinpath(cdir, sim))
+    fens, fes, clampedl, lbdfes = make_mesh(prop)
+    File =  "twistedbar" * "-nn-$(count(fens))-mesh.vtk"
+    vtkexportmesh(joinpath(cdir, File), fens, fes)
+    File =  "twistedbar" * "-nn-$(count(fens))-loaded-face-mesh.vtk"
+    vtkexportmesh(joinpath(cdir, File), fens, lbdfes)
+end
 
 function material_parameters()
     # Material parameters of the structure
@@ -118,6 +133,7 @@ function common_parameters()
     prop["dimensions"] = dimensions
     prop["mass_shift"] = mass_shift
     prop["smallestdimension"] = minimum(dimensions)
+    prop["nbf1maxclamp"] = (3, 6)
 
     # Sensor location
     prop["sensor_location"] = [dimensions[1], 0.0, 0.0]
