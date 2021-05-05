@@ -147,7 +147,6 @@ function two_stage_free(cdir, sim, make_model)
     fmax = prop["fmax"]
     nbf1maxclamp = prop["nbf1maxclamp"]
 
-    @show keys(model)
     mor = nothing
     timing["Partitioning"] = @elapsed begin
         partitioning = Int[]
@@ -213,24 +212,6 @@ function two_stage_free(cdir, sim, make_model)
 
     timing["Eigenvector reconstruction"] = @elapsed begin
         approxevec = Phi*real(evec)
-        #p = view(approxevec, :, 1)
-        #approxevec[:, 1] .= p ./ sqrt(dot(p, M * p))
-        #for i in 2:size(approxevec, 2)
-        #    p = view(approxevec, :, i-1)
-        #    q = M * p
-        #    for j in i:size(approxevec, 2)
-        #        c = dot(q, view(approxevec, :, j))
-        #        approxevec[:, j] .-= c .* p
-        #    end
-        #    p = view(approxevec, :, i)
-        #    approxevec[:, i] .= p ./ sqrt(dot(p, M * p))
-        #end
-        #for i in 1:size(approxevec, 2)
-        #    for j in i:size(approxevec, 2)
-
-        #        @assert (i == j ? abs(1.0 - dot(view(approxevec, :, i), M * view(approxevec, :, j))) : abs(0.0 - dot(view(approxevec, :, i), M * view(approxevec, :, j)))) < 1.0e-12 
-        #    end
-        #end
     end
 
     println("Approximate natural frequencies: $(round.(approxfs, digits=4)) [Hz]")
@@ -449,13 +430,15 @@ function redu_free_vibration_alt(sim, make_model)
     true
 end
 
-function two_stage_free_enhanced(sim, make_model)
+function two_stage_free_enhanced(cdir, sim, make_model)
     @info "Free Vibration (Reduced, Enhanced)"
-    prop = retrieve_json(sim)
+    prop = retrieve_json(joinpath(cdir, sim))
 
-    mkpath(prop["resultsdir"])
-    rf = with_extension(sim * "-results", "json")
-    resultsfile = joinpath(prop["resultsdir"], rf)
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
 
     results = Dict()
     if isfile(joinpath(cdir, resultsfile))
@@ -480,16 +463,29 @@ function two_stage_free_enhanced(sim, make_model)
     nu = prop["nu"]
     rho = prop["rho"]
     fmax = prop["fmax"]
-    alpha = prop["alpha"]
-    smallestdimension = prop["smallestdimension"]
     nbf1maxclamp = prop["nbf1maxclamp"]
 
-    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
-    
-    @info "Number of clusters $Nc, number of functions $nbf1max"
-
+    mor = nothing
     timing["Partitioning"] = @elapsed begin
-        partitioning = nodepartitioning(fens, Nc)
+        partitioning = Int[]
+        if "partitioning_method" in keys(model) && 
+            model["partitioning_method"] == "metis"
+            @info "Metis partitioning"
+            C = connectionmatrix(femm, count(fens))
+            g = Metis.graph(C; check_hermitian=true)
+            @show Nc = Int(round(N/1000))
+            partitioning = Metis.partition(g, Nc; alg = :KWAY)
+            nbf1max = minimum(nbf1maxclamp)
+        else # Default: Recursive Inertial Bisection
+            @info "RIB partitioning"
+            V = integratefunction(femm, geom, (x) ->  1.0)
+            alpha = prop["alpha"]
+            smallestdimension = prop["smallestdimension"]
+            nbf1maxclamp = prop["nbf1maxclamp"]
+            Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
+            partitioning = nodepartitioning(fens, Nc)
+        end
         mor = CoNCData(fens, partitioning)
     end
 
@@ -504,90 +500,25 @@ function two_stage_free_enhanced(sim, make_model)
     K = model["K"]
     M = model["M"]
     F = model["F"]
+    @info "Sparsity of K: $(nnz(K)/prod(size(K)))"
+    @info "Sparsity of M: $(nnz(M)/prod(size(M)))"
 
     transfm(m, evecs) = (evecs' * m * evecs)
     transfv(v, evecs) = (evecs' * v)
     timing["Reduced matrices"] = @elapsed begin
         Kr = transfm(K, Phi)
-        Kr .= 0.5 * (Kr .+ transpose(Kr))
+        #Kr .= 0.5 * (Kr .+ transpose(Kr))
         Mr = transfm(M, Phi)
-        Mr .= 0.5 * (Mr .+ transpose(Mr))
+        #Mr .= 0.5 * (Mr .+ transpose(Mr))
     end
     @info "Transformation matrix dimensions $(size(Phi))"
 
     timing["EV problem"] = @elapsed begin
         eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
-        approxevec = Phi*real(evec)
     end
-    
-    # Enhance with static solution instead of the last eigenvector
-    #timing["Additional vectors"] = @elapsed begin
-    #    C = model["C"]
-    #    transfm(m, evecs) = (evecs' * m * evecs)
-    #    transfv(v, evecs) = (evecs' * v)
-    #    Mr2 = transfm(M, approxevec)
-    #    Kr2 = transfm(K, approxevec)
-    #    Cr2 = transfm(C, approxevec)
-    #    Fr2 = transfv(F, approxevec)
-    #    Cd = spzeros(size(C, 1), size(C, 2))
-    #    Kd = spzeros(size(C, 1), size(C, 2))
-    #    for i in 1:size(C, 1)
-    #        Cd[i, i] = C[i, i]
-    #        Kd[i, i] = K[i, i]
-    #    end
-    #    na = 4
-    #    vs = []
-    #    for k in 1:na
-    #        omega = 2*pi*approxfs[k];
-            
-    #        Ur2 = (-omega^2*Mr2 + (1im*omega)*Cr2 + Kr2)\Fr2;
-    #        U1 = approxevec * Ur2;
-    #        #Uk = (1/(-omega^2)) * (M \ (F - K * U1 -  (1im*omega)*(C * U1)))
-    #        Uk = (-omega^2 * M + (1im*omega)*Cd + Kd) \ (F - K * U1 - (1im*omega)*(C * U1) + Kd * U1 + (1im*omega)*(Cd * U1))
-    #        #Uk = (-omega^2*M + (1im*omega)*C + K) \ F
-    #        v = real(Uk - U1)
-    #        @show norm(v)
-    #        v = v / norm(v)
-    #        push!(vs, v)
-    #        v = imag(Uk - U1)
-    #        @show norm(v)
-    #        v = v / norm(v)
-    #        push!(vs, v)
-    #    end
-    #    for k in 1:length(vs)
-    #        approxevec = hcat(approxevec,  vs[k])
-    #    end
-    #end
-    
-    #timing["Additional vectors"] = @elapsed begin
-    #    C = model["C"]
-    #    transfm(m, evecs) = (evecs' * m * evecs)
-    #    transfv(v, evecs) = (evecs' * v)
-    #    Mr2 = transfm(M, approxevec)
-    #    Kr2 = transfm(K, approxevec)
-    #    Cr2 = transfm(C, approxevec)
-    #    Fr2 = transfv(F, approxevec)
-    #    na = 4
-    #    vs = []
-    #    for k in 1:na
-    #        omega = 2*pi*approxfs[k];
-            
-    #        Ur2 = (-omega^2*Mr2 + Kr2)\Fr2;
-    #        U1 = approxevec * Ur2;
-    #        #Uk = (1/(-omega^2)) * (M \ (F - K * U1 -  (1im*omega)*(C * U1)))
-    #        Uk = (-omega^2 * M) \ (- K * U1)
-    #        #Uk = (-omega^2*M + (1im*omega)*C + K) \ F
-    #        v = real(Uk - U1)
-    #        @show norm(v)
-    #        v = v / norm(v)
-    #        push!(vs, v)
-    #    end
-    #    for k in 1:length(vs)
-    #        approxevec = hcat(approxevec,  vs[k])
-    #    end
-    #end
-
+    approxevec = evec
+        
     # The following works, but it is expensive
     timing["Additional vectors"] = @elapsed begin
         C = model["C"]
@@ -598,21 +529,20 @@ function two_stage_free_enhanced(sim, make_model)
         for k in 1:na
             @show omega = 2*pi*approxfs[k];
             Ur = (-omega^2*Mr + (1im*omega)*Cr + Kr)\Fr;
-            U1 = Phi * Ur;
-            #Uk = (1/(-omega^2)) * (M \ (F - K * U1 -  (1im*omega)*(C * U1)))
-            Uk = (-omega^2*M + (1im*omega)*C + K) \ F
-            v = real(Uk - U1)
-            @show norm(v)
-            v = v / norm(v)
-            push!(vs, v)
-            v = imag(Uk - U1)
-            @show norm(v)
-            v = v / norm(v)
-            push!(vs, v)
+            push!(vs, imag.(Ur)/norm(imag.(Ur)))
         end
+
+        for k in axes(approxevec, 2)
+            @show dot(approxevec[:, k], vs[1])
+        end
+        
         for k in 1:length(vs)
             approxevec = hcat(approxevec,  vs[k])
         end
+    end
+
+    timing["Eigenvector reconstruction"] = @elapsed begin
+        approxevec = Phi*real(approxevec)
     end
 
     println("Approximate natural frequencies: $(round.(approxfs, digits=4)) [Hz]")
@@ -625,14 +555,15 @@ function two_stage_free_enhanced(sim, make_model)
     rd["nbf1max"] = nbf1max
 
     rd["frequencies"] = approxfs
-    timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"]
+    timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"] + timing["Additional vectors"]
     rd["timing"] = timing
 
-    mkpath(prop["matricesdir"])
-    rd["basis"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-Phi", "h5")))
-    store_matrix(rd["basis"]["file"], approxevec)
-    rd["eigenvalues"] = Dict("file"=>joinpath(prop["matricesdir"], with_extension(sim * "-eval", "h5")))
-    store_matrix(rd["eigenvalues"]["file"], eval)
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    rd["basis"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), approxevec)
+    file = joinpath(matricesdir, with_extension(sim * "-eval", "h5"))
+    rd["eigenvalues"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["eigenvalues"]["file"]), eval)
 
     results["reduced_basis"] = rd
     store_json(joinpath(cdir, resultsfile), results)
