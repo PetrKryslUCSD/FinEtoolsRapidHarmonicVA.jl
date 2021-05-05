@@ -95,6 +95,7 @@ function make_model(prop)
     model["C"] = C
     model["F"] = F
     model["sensor_node"] = sensorn
+    model["partitioning_method"] = "metis"
 
     return model
 end # 
@@ -129,7 +130,7 @@ function common_parameters()
     prop["graphicsdir"] = "graphics"
     prop["matricesdir"] = "matrices"
 
-    prop["partitioning_method"] = "metis"
+    
 
     # Material Parameters, geometry
     E, nu, rho, dimensions, mass_shift = material_parameters() 
@@ -148,7 +149,7 @@ function common_parameters()
     prop["sensor_direction"] = 2
 
     # Frequency Sweep
-    prop["frequency_sweep"] = (100, 20000, 200) # from, to, how many
+    prop["frequency_sweep"] = (1000, 10000, 500) # from, to, how many
 
     return prop
 end
@@ -170,7 +171,7 @@ function define_sim(; kws...)
 
     prop["fmax"] = 2*prop["frequency_sweep"][2]
         
-    sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
+    sim = "$(prop["namebase"])_mesh_$(prop["mesh_name"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
 
     if (!isfile(sim * ".json")) || 
         ((:force_overwrite in keys(kws)) && kws[:force_overwrite])
