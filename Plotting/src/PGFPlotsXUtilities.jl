@@ -158,9 +158,12 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         direct_frequencies, direct_ampls, range_indexes
     end
 
-
-
-    for sim in sim_list[2:end]
+    siml = sim_list[2:end]
+    if what != :errors
+        siml = sim_list
+        objects = []
+    end
+    for sim in siml
         prop = retrieve_json(joinpath(cdir, sim))
         # Load the data for the graph of the FRF
         j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
