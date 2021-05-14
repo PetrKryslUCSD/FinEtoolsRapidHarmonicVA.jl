@@ -26,6 +26,8 @@ Manifest.toml
 # Result and simulation files
 *.json
 *.h5
+*.vtk
 
 *.sublime-workspace
 
+.gitignore
