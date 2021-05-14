@@ -67,21 +67,12 @@ function make_model(prop)
     M = mass(femm, geom, u)
     M .= 0.5 * (M .+ transpose(M))
 
-    # Compute the parameters of Rayleigh damping. For the two selected
-    # frequencies we have the relationship between the damping ratio and
-    # the Rayleigh parameters
-    a0(zeta1, zeta2, o1, o2) = 2*(o1*o2)/(o2^2-o1^2)*(o2*zeta1-o1*zeta2);# a0
-    a1(zeta1, zeta2, o1, o2) = 2*(o1*o2)/(o2^2-o1^2)*(-1/o2*zeta1+1/o1*zeta2);# a1
+    # Damping parameters: structural damping assumed
+    loss_factor = 0.001
+    C = nothing
 
-    # Damping parameters
-    zeta1, zeta2, omega1, omega2 = 0.01, 0.005, 100, 5000
-    a0v, a1v = a0(zeta1, zeta2, omega1, omega2), a1(zeta1, zeta2, omega1, omega2) 
-    # The damping is evaluated on the tetrahedral mesh using the full integration rule
-    femmc = FEMMDeforLinear(MR, IntegDomain(fes, TetRule(1)), material)
-    C = a0v * mass(femmc, geom, u) + a1v * stiffness(femmc, geom, u)
-
-    fi = ForceIntensity(FFlt[0.0, 0.0, 0.01*phun("MPa")]);
-    loadedbfemm  = FEMMBase(IntegDomain(lbdfes, TriRule(1)))
+    fi = ForceIntensity(FFlt[0.0, 0.1*phun("MPa"), 0.1*phun("MPa")]);
+    loadedbfemm  = FEMMBase(IntegDomain(lbdfes, TriRule(3)))
     F = distribloads(loadedbfemm, geom, u, fi, 2);
     
     model = Dict()
@@ -92,6 +83,7 @@ function make_model(prop)
     model["u"] = u
     model["K"] = K
     model["M"] = M
+    model["loss_factor"] = loss_factor
     model["C"] = C
     model["F"] = F
     model["sensor_node"] = sensorn
@@ -141,15 +133,15 @@ function common_parameters()
     prop["dimensions"] = dimensions
     prop["mass_shift"] = mass_shift
     prop["smallestdimension"] = minimum(dimensions)
-    prop["nbf1maxclamp"] = (3, 3)
+    prop["nbf1maxclamp"] = (5, 5)
     prop["alpha"] = 1.5
 
     # Sensor location
     #prop["sensor_location"] = [dimensions[1], 0.0, 0.0]
-    prop["sensor_direction"] = 2
+    prop["sensor_direction"] = 3
 
     # Frequency Sweep
-    prop["frequency_sweep"] = (1000, 10000, 500) # from, to, how many
+    prop["frequency_sweep"] = (100, 10000, 600) # from, to, how many
 
     return prop
 end

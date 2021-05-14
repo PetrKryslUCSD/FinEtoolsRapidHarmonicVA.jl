@@ -1,5 +1,5 @@
 # Activate/instantiate the Plotting environment.
-# Then execute the following file line by line.
+# Then execute this file.
 
 include("./define_sim.jl")
 
@@ -16,8 +16,9 @@ stage = "reduced_basis"
 
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal")]
+the_methods = [("free", "modal"), ("wyd_ritz", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal")]
 
-for_nmodes = [50, 100, 200]
+for_nmodes = [50, 100, 200, 400]
 plots = []
 legends = []
 for (reduction_method, harmonic_method) in the_methods
@@ -55,7 +56,7 @@ for (reduction_method, harmonic_method) in the_methods
 
 end
 
-@pgf ax = LogLogAxis(
+@pgf ax = SemiLogYAxis(
     {
         height = "8cm",
         width = "9cm",

@@ -13,10 +13,11 @@ using FinEtoolsRapidHarmonicVA
 
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"),] #  ("lanczos_ritz", "modal")
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("lanczos_ritz", "modal")]
-the_methods = [("two_stage_free", "modal"),  ("two_stage_wyd_ritz", "modal"), ]
+the_methods = [("free", "modal"), ("two_stage_free", "modal"),  ("two_stage_wyd_ritz", "modal"), ]
+the_methods = [("free", "modal"), ("wyd_ritz", "modal"), ("two_stage_free", "modal"),  ("two_stage_wyd_ritz", "modal"), ]
 
 
-for nmodes in [50, ]
+for nmodes in [100, ]
 
     sims = []
     for (reduction_method, harmonic_method) in the_methods
