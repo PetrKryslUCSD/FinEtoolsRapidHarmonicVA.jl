@@ -595,6 +595,7 @@ function harmonic_vibration_modal(cdir, sim, make_model)
     K = model["K"]
     M = model["M"]
     C = model["C"]
+    loss_factor = "loss_factor" in keys(model) ? model["loss_factor"] : 0.0
     F = model["F"]
     f = results["reduced_basis"]["basis"]["file"]
     evecs = retrieve_matrix(joinpath(cdir, f))
@@ -605,7 +606,11 @@ function harmonic_vibration_modal(cdir, sim, make_model)
     timing["Reduced matrices"] = @elapsed begin
         Mr = transfm(M, evecs)
         Kr = transfm(K, evecs)
-        Cr = transfm(C, evecs)
+        if C === nothing 
+            Cr = deepcopy(Kr)
+        else
+            Cr = transfm(C, evecs)
+        end
         Fr = transfv(F, evecs)
     end
 
@@ -629,8 +634,10 @@ function harmonic_vibration_modal(cdir, sim, make_model)
         U1 = zeros(FCplxFlt, u.nfreedofs)
         for k in 1:length(frequencies)
             omega = 2*pi*frequencies[k];
-            # Solve the reduced equations.
-            Ur = (-omega^2*Mr + 1im*omega*Cr + Kr)\Fr;
+            # Solve the reduced equations. Is the damping viscous or structural?
+            # If the loss factor is 0, viscous damping is assumed.
+            cmult = loss_factor == 0.0 ? omega : loss_factor
+            Ur = (-omega^2*Mr + 1im*cmult*Cr + Kr)\Fr;
             # Reconstruct the solution in the finite element space.
             U1 .= evecs * Ur;
             frf[k] = U1[sensorndof][1]
