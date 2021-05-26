@@ -53,7 +53,7 @@ function free(cdir, sim, make_model)
     M = model["M"]
     F = model["F"]
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(K + mass_shift*M), Symmetric(M); nev=nmodes, which=:SM)
+        eval, evec, nconv = eigs(Symmetric(K + mass_shift*M), Symmetric(M); nev=nmodes, which=:SM, explicittransform=:none)
         eval .-=  mass_shift;
         fs = real(sqrt.(complex(eval)))/(2*pi)
     end
@@ -205,7 +205,7 @@ function two_stage_free(cdir, sim, make_model)
     end
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM)
+        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM, explicittransform=:none)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
         
     end
@@ -378,7 +378,7 @@ function redu_free_vibration_alt(sim, make_model)
     
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM)
+        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM, explicittransform=:none)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
         
     end
@@ -514,7 +514,7 @@ function two_stage_free_enhanced(cdir, sim, make_model)
     @info "Transformation matrix dimensions $(size(Phi))"
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM)
+        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM, explicittransform=:none)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
     end
     approxevec = evec
