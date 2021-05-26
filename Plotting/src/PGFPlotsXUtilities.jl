@@ -137,6 +137,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         direct_frequencies = hvd["sweep_frequencies"]
         frf = hvd["frf"]
         mf = frf["file"]
+        @assert isfile(joinpath(cdir, mf)) "$(joinpath(cdir, mf)) not found"
         m = retrieve_matrix(joinpath(cdir, mf))
         freal = real.(m)
         fimag = imag.(m)
