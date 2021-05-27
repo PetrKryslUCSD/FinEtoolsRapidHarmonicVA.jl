@@ -58,6 +58,7 @@ function free(cdir, sim, make_model)
         fs = real(sqrt.(complex(eval)))/(2*pi)
     end
     println("Natural frequencies: $(round.(fs, digits=4)) [Hz]")
+    println("Time: $(round.(timing["EV problem"], digits=4)) [s]")
 
     ## Enhance with static solution instead of the last eigenvector
     #timing["Static vector"] = @elapsed begin

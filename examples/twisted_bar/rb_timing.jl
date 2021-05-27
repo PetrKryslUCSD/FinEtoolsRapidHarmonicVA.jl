@@ -1,5 +1,5 @@
 # Activate/instantiate the Plotting environment.
-# Then execute the following file line by line.
+# Then run this file.
 
 include("./define_sim.jl")
 
@@ -15,8 +15,9 @@ cdir = sim_directory()
 stage = "reduced_basis"
 
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
+#the_methods = [("free", "modal"), ("two_stage_free", "modal"), ]
 
-for_nmodes = 200
+for_nmodes = 100
 plots = []
 legends = []
 for (reduction_method, harmonic_method) in the_methods
@@ -24,7 +25,7 @@ for (reduction_method, harmonic_method) in the_methods
 
     timings = []
     for nmodes in [for_nmodes,  ]
-        for mesh_n in [4, 6, 8, 10, 12, 14]
+        for mesh_n in [4, 6, 8, 10, 12, 14, 16]
             sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method)
             prop = retrieve_json(joinpath(cdir, sim))
             j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
