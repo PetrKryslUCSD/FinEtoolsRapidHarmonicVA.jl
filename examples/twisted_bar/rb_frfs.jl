@@ -4,10 +4,10 @@ using FinEtoolsRapidHarmonicVA
 
 include("./define_sim.jl")
 
-using Plotting
-using Plotting: reduced_basis_time
-using Plotting: plot_frf, plot_timing
-using Plotting: plot_timing_reduced_basis, plot_frf_errors, plot_frf_amplitudes
+using .Plotting
+using .Plotting: reduced_basis_time
+using .Plotting: plot_frf, plot_timing
+using .Plotting: plot_timing_reduced_basis, plot_frf_errors, plot_frf_amplitudes
 using FinEtoolsRapidHarmonicVA
 
 
