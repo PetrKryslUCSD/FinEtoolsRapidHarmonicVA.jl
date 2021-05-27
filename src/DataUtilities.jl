@@ -42,6 +42,7 @@ const MATRIX_SPARSE = 1
 Retrieve a matrix.
 """
 function retrieve_matrix(fname)
+    @show fname
     fname = with_extension(fname, "h5")
     typ = MATRIX_UNKNOWN
     f = try
