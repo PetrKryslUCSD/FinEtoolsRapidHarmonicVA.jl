@@ -181,6 +181,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         ampls = abs.(freal + 1im*fimag)./phun("mm")
         @assert length(ampls) == length(frequencies)
         s = reduced_basis_style(prop["reduction_method"])
+        @show s, prop["reduction_method"]
         @pgf p = PGFPlotsX.Plot(
         {
         color = s[1],
@@ -189,7 +190,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         line_width = 0.7
         },
         what == :errors ? 
-        Coordinates([v for v in  zip(frequencies[range_indexes], abs.(direct_ampls[range_indexes] .- ampls[range_indexes]))]) : 
+        Coordinates([v for v in  zip(frequencies[range_indexes], abs.(direct_ampls[range_indexes] .- ampls[range_indexes])./abs.(direct_ampls[range_indexes]))]) : 
         Coordinates([v for v in  zip(frequencies[range_indexes], ampls[range_indexes])])
 
         )

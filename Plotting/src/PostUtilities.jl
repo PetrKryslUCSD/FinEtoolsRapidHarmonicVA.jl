@@ -78,6 +78,10 @@ function reduced_basis_style(reduction_method)
         return ("cyan", "star")
     elseif reduction_method == "none"
          return ("black", "+")
+    elseif (reduction_method == "conc_reduced")
+        return ("black!40!white", "triangle")
+    elseif (reduction_method == "two_stage_free_residual")
+        return ("red!40!white", "square")
     else
         return ("", "")
     end
