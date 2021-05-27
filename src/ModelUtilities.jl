@@ -9,6 +9,11 @@ using FinEtools.MatrixUtilityModule: export_sparse, import_sparse
 using LinearAlgebra: eigen
 import CoNCMOR: CoNCData, transfmatrix, LegendreBasis, SineCosineBasis 
 
+# With Arpack 0.5, the explicit transform argument is needed to avoid
+# unnecessary and expensive calculation.
+
+_eigs(A, B, nmodes) = eigs(Symmetric(A), Symmetric(B); nev=nmodes, which=:SM, explicittransform=:none)
+
 function load_mesh(meshfile)
     output = import_MESH(meshfile)
     fens, fes = output["fens"], output["fesets"][1]
@@ -54,7 +59,7 @@ function free(cdir, sim, make_model)
     M = model["M"]
     F = model["F"]
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(K + mass_shift*M), Symmetric(M); nev=nmodes, which=:SM, explicittransform=:none)
+        eval, evec, nconv = _eigs(K + mass_shift*M, M, nmodes)
         eval .-=  mass_shift;
         fs = real(sqrt.(complex(eval)))/(2*pi)
     end
@@ -207,7 +212,7 @@ function two_stage_free(cdir, sim, make_model)
     end
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM, explicittransform=:none)
+        eval, evec, nconv = _eigs(Kr + mass_shift*Mr, Mr, nmodes)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
         
     end
@@ -383,9 +388,8 @@ function redu_free_vibration_alt(sim, make_model)
     
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM, explicittransform=:none)
+        eval, evec, nconv = _eigs(Kr + mass_shift*Mr, Mr, nmodes)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
-        
     end
 
     timing["Mass orthogonalization"] = @elapsed begin
@@ -519,7 +523,7 @@ function two_stage_free_residual(cdir, sim, make_model)
     @info "Transformation matrix dimensions $(size(Phi))"
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM)
+        eval, evec, nconv = _eigs(Kr + mass_shift*Mr, Mr, nmodes)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
     end
     approxevec = evec
@@ -708,7 +712,7 @@ function two_stage_free_enhanced(cdir, sim, make_model)
     @info "Transformation matrix dimensions $(size(Phi))"
 
     timing["EV problem"] = @elapsed begin
-        eval, evec, nconv = eigs(Symmetric(Kr + mass_shift*Mr), Symmetric(Mr); nev=nmodes, which=:SM, explicittransform=:none)
+        eval, evec, nconv = _eigs(Kr + mass_shift*Mr, Mr, nmodes)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
     end
     approxevec = evec
