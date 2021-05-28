@@ -10,16 +10,16 @@ using Plotting: plot_frf, plot_timing
 using Plotting: plot_timing_reduced_basis, plot_frf_errors, plot_frf_amplitudes
 using FinEtoolsRapidHarmonicVA
 
-
 cdir = sim_directory()
 stage = "reduced_basis"
 
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
 #the_methods = [("free", "modal"), ("two_stage_free", "modal"), ]
 
-for_nmodes = 100
+for_nmodes = 400
 plots = []
 legends = []
+
 for (reduction_method, harmonic_method) in the_methods
 
 
