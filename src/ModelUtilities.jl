@@ -743,7 +743,7 @@ function two_stage_free_enh(cdir, sim, make_model)
             # Krylov
             alg = MinresSolver(size(K, 1), size(K, 2), typeof(F))
             x0 = approxevec[:, r]
-            (DU, stats) = minres!(alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = 60, verbose=1)
+            (DU, stats) = minres!(alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = 30, verbose=1)
             
             DU /= norm(DU)
             # Replace the least significant modes
