@@ -6,17 +6,15 @@ include("./define_sim.jl")
 using PGFPlotsX
 using Plotting
 using Plotting: reduced_basis_time, reduced_basis_technique, reduced_basis_style
-using Plotting: plot_frf, plot_timing
-using Plotting: plot_timing_reduced_basis, plot_frf_errors, plot_frf_amplitudes
 using FinEtoolsRapidHarmonicVA
 
 cdir = sim_directory()
 stage = "reduced_basis"
 
-the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal")]
+the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal")]
 #the_methods = [("free", "modal"), ("two_stage_free", "modal"), ]
 
-for_nmodes = 400
+for_nmodes = 25
 plots = []
 legends = []
 

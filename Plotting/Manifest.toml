@@ -198,7 +198,7 @@ uuid = "b9c67c47-bda1-4ffe-8b38-d3bbfa418118"
 version = "0.1.0"
 
 [[FinEtoolsRapidHarmonicVA]]
-deps = ["Arpack", "BenchmarkTools", "CoNCMOR", "DelimitedFiles", "FinEtools", "FinEtoolsDeforLinear", "FinEtoolsRapidEig", "HDF5", "JSON", "LinearAlgebra", "Metis", "PGFPlotsX", "Revise", "SparseArrays", "Statistics", "SymRCM"]
+deps = ["Arpack", "BenchmarkTools", "CoNCMOR", "DelimitedFiles", "FinEtools", "FinEtoolsDeforLinear", "HDF5", "JSON", "KrylovKit", "LinearAlgebra", "Metis", "PGFPlotsX", "Revise", "SparseArrays", "Statistics", "SymRCM"]
 path = ".."
 uuid = "af7d4af5-70c3-4561-b9e8-ddab4aae2ad7"
 version = "0.1.0"
@@ -305,6 +305,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "2ef87eeaa28713cb010f9fb0be288b6c1a4ecd53"
 uuid = "f7e6163d-2fa5-5f23-b69c-1db539e41963"
 version = "0.1.0+0"
+
+[[KrylovKit]]
+deps = ["LinearAlgebra", "Printf"]
+git-tree-sha1 = "0328ad9966ae29ccefb4e1b9bfd8c8867e4360df"
+uuid = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
+version = "0.5.3"
 
 [[LaTeXStrings]]
 git-tree-sha1 = "c7f1c695e06c01b95a67f0cd1d34994f3e7db104"
