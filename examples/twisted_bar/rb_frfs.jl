@@ -2,10 +2,11 @@
 # Then execute this file.
 using FinEtoolsRapidHarmonicVA
 
+
 include("./define_sim.jl")
 
 using Plotting
-using Plotting: plot_frf_errors, plot_frf_amplitudes
+using Plotting.GnuplotUtilities: clear_terminal, plot_frf_errors, plot_frf_amplitudes
 using FinEtoolsRapidHarmonicVA
 
 
@@ -14,6 +15,8 @@ the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"
 #the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_residual", "modal"),]
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
 #the_methods = [("wyd_ritz", "smodal"), ("free", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
+
+clear_terminal()
 
 for mesh_n in [8]
     for nmodes in [25, ]
