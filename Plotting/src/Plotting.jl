@@ -2,8 +2,10 @@ module Plotting
 
 using Revise
 
-#include("PlotlyJSUtilities.jl")
-include("PGFPlotsXUtilities.jl")
 include("PostUtilities.jl")
+#include("PlotlyJSUtilities.jl")
+include("GnuplotUtilities.jl")
+include("PGFPlotsXUtilities.jl")
+
 
 end # module

@@ -1,15 +1,11 @@
+module PostUtilities
+
 using JSON
 using DelimitedFiles
-
-#using PGFPlotsX
-# using Random
-# using Distributions
 using Statistics
 # using StatsBase
 using LinearAlgebra
 using Statistics
-using FinEtools
-using FinEtoolsRapidHarmonicVA   
 
 function correlation(sim1 = "sim1", sim2 = "sim2")
     prop = retrieve_json(sim1)
@@ -115,3 +111,5 @@ function reduced_basis_time(reduction_method, tims)
         return 0.0
     end
 end
+
+end # PlotUtilities

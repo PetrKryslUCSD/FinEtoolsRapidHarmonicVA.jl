@@ -1,7 +1,10 @@
+module PGFPlotsXUtilities
+
 using JSON
 using DelimitedFiles
-
 using PGFPlotsX
+using ..PostUtilities
+using ..PostUtilities: reduced_basis_style, reduced_basis_technique
 # using Random
 # using Distributions
 using Statistics
@@ -10,110 +13,6 @@ using LinearAlgebra
 using Statistics
 using FinEtools
 using FinEtoolsRapidHarmonicVA   
-
-function plot_timing_reduced_basis(cdir, sim_list = ["sim1"], filename = "plot.pdf")
-    stage = "reduced_basis"
-
-    c = []
-
-    for sim in sim_list
-        prop = retrieve_json(joinpath(cdir, sim))
-        # Load the data for the graph of the FRF
-        j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
-        results = retrieve_json(j)
-        if stage in keys(results)
-            sd = results[stage] 
-            tims = sd["timing"]
-            t = reduced_basis_time(prop["reduction_method"], tims)
-            push!(c, (reduced_basis_technique(prop["reduction_method"]), t))
-        end
-    end
-    @pgf p = PGFPlotsX.Plot(Coordinates(c))
-    
-    @pgf ax = Axis(
-        {
-            height = "8cm",
-            width = "9cm",
-            ybar,
-            ymin = 0,
-            enlargelimits = "upper",
-            enlarge_x_limits = "true",
-            legend_style = {
-                at = Coordinate(0.5, 0.5),
-                anchor = "south",
-                legend_columns = -1
-            },
-            ylabel = "Time [s]",
-            symbolic_x_coords=[t[1] for t in c],
-            xtick = "data",
-            xticklabel_style={
-                rotate=45,
-                anchor="east"
-            },
-            nodes_near_coords,
-            nodes_near_coords_align={vertical}
-        },
-        p
-    )
-    display(ax)
-    pgfsave(filename, ax)
-    true
-end
-
-
-function plot_times_reduced_basis(list_of_sim_lists = [["sim1",],], filename = "plot.pdf")
-    stage = "reduced_basis"
-
-    plots = []
-
-    for sim_list in list_of_sim_lists
-        c = []
-        s = nothing
-        for sim in sim_list
-            prop = retrieve_json(sim)
-            s = reduced_basis_style(prop["reduction_method"])
-            # Load the data for the graph of the FRF
-            j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
-            results = retrieve_json(j)
-            if stage in keys(results)
-                sd = results[stage] 
-                tims = sd["timing"]
-                t = reduced_basis_time(prop["reduction_method"], tims)
-                nm = sd["number_of_modes"]
-                push!(c, (nm, t))
-            end
-        end
-        #@pgf p = PGFPlotsX.Plot(Coordinates(c))
-        
-        @pgf p = PGFPlotsX.Plot(
-        {
-        color = s[1],
-        mark = s[2]
-        },
-        Coordinates(c))
-        push!(plots, p)
-    end
-    
-    @pgf ax = Axis(
-        {
-            height = "8cm",
-            width = "9cm",
-            ymin = 0,
-            enlargelimits = "upper",
-            enlarge_x_limits = "true",
-            legend_style = {
-                at = Coordinate(0.5, 0.5),
-                anchor = "south",
-                legend_columns = -1
-            },
-            ylabel = "Time [s]"
-        },
-        plots...
-    )
-    display(ax)
-    pgfsave(filename, ax)
-    true
-end
 
 function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf", range = [-Inf, Inf])
     _plot_frf(cdir, sim_list, filename, :errors, range)
@@ -312,3 +211,5 @@ function plot_frf_errors_direct(sim_list = ["sim1"], filename = "plot.pdf")
     pgfsave(filename, ax)
     true
 end
+
+end # PGFPlotsXUtilities
