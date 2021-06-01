@@ -14,23 +14,27 @@ the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ]
 #the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_residual", "modal"),]
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
-#the_methods = [("wyd_ritz", "smodal"), ("free", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
+#the_methods = [("wyd_ritz", "modal"), ("free", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
 
 clear_terminal()
 
+for linsolve_method in ["minres", "diom", "symmlq"]
+itmax = 160
 for mesh_n in [8]
     for nmodes in [50, ]
         
         sims = []
         for (reduction_method, harmonic_method) in the_methods
-            sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method)
+            sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method, linsolve_method = linsolve_method, itmax = itmax)
             push!(sims, sim)
         end
         
-        title = "mesh_n=$(mesh_n)-nmodes=$(nmodes)" * "minres-itmax=10-time=3.25" 
-        plot_frf_errors(sim_directory(), sims, "frf-errors-m$(mesh_n)-n$(nmodes).pdf"; title = title)
+        title = "twisted_bar-frf-mesh_n-$(mesh_n)-$(nmodes)-$(linsolve_method)-$(itmax)"
+        file = title * ".pdf"
+        plot_frf_errors(sim_directory(), sims, file; title = title)
         #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
 
-        saveas(title)
+        saveas(file)
     end
+end
 end
