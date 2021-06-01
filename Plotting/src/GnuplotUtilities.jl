@@ -4,7 +4,7 @@ using JSON
 using DelimitedFiles
 using Gnuplot
 using ..PostUtilities
-using ..PostUtilities: reduced_basis_style, reduced_basis_technique
+using ..PostUtilities: reduced_basis_style, reduced_basis_technique, fixupext
 # using Random
 # using Distributions
 using Statistics
@@ -20,16 +20,28 @@ function clear_terminal()
     # @gp  :- "set multiplot"  :- 
 end
 
-function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf", range = [-Inf, Inf])
-    _plot_frf(cdir, sim_list, filename, :errors, range)
+function saveas(a) 
+    a = fixupext(a, ".pdf")
+    @gp  :- "set terminal push" :-
+    @gp  :- "set terminal pdfcairo " :-
+    @gp  :- "set output '$(a)' "  :-
+    @gp  :- "replot"   :-
+    @gp  :- "set output" :-
+    @gp  :- "set terminal pop" 
 end
-
-function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf", range = [-Inf, Inf])
-    _plot_frf(cdir, sim_list, filename, :amplitudes, range)
-end
-
-function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf])
     
+
+function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="")
+    _plot_frf(cdir, sim_list, filename, :errors, range, title)
+end
+
+function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="")
+    _plot_frf(cdir, sim_list, filename, :amplitudes, range, title)
+end
+
+function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf], title="")
+    title = replace(title, '_' => "\\_") 
+
     @gp  "set terminal windows 0 "  :-
         
     direct_frequencies, direct_ampls, range_indexes = let sim = sim_list[1]
@@ -93,7 +105,8 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
     @gp  :- "set logscale y" :-
     @gp  :- "set xlabel 'Frequency [Hz]'" :-
     @gp  :- "set ylabel 'FRF [deg]'" :-
-    @gp  :- "set title 'pl'"
+    @gp  :- "set title '$(title)'" 
+
 
     true
 end

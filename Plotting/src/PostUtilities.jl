@@ -7,6 +7,11 @@ using Statistics
 using LinearAlgebra
 using Statistics
 
+function fixupext(n, ext)
+    f, e = splitext(n)
+    return f * ext
+end
+
 function correlation(sim1 = "sim1", sim2 = "sim2")
     prop = retrieve_json(sim1)
 
