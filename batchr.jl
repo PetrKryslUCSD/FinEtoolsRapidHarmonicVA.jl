@@ -15,9 +15,9 @@ reduction_methods = ["two_stage_free_enh", ]
 
 @info "Burn in "
 
-for linsolve_method in ["minres"]
-    for itmax in [5, ]
-        for mesh_n in [4, ]
+for linsolve_method in ["minres", "diom", "symmlq"]
+    for itmax in [160]
+        for mesh_n in [8, ]
             for nmodes in [50, ]
                 for reduction_method in reduction_methods
                     sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax)
@@ -28,21 +28,21 @@ for linsolve_method in ["minres"]
     end
 end
 
-@info "Running simulations"
+#@info "Running simulations"
 
-#Now for real
+##Now for real
 
-for linsolve_method in ["minres"]
-    for itmax in [5, 10, 20, 40]
-        for mesh_n in [4, 6, 8, 10, 12, 14, 16]
-            for nmodes in [25, 50, 100, 200, 400]
+#for linsolve_method in ["minres"]
+#    for itmax in [5, 10, 20, 40]
+#        for mesh_n in [4, 6, 8, 10, 12, 14, 16]
+#            for nmodes in [25, 50, 100, 200, 400]
 
-                for reduction_method in reduction_methods
-                    sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax)
-                    solve(sim_directory(), sim, make_model)
-                end
+#                for reduction_method in reduction_methods
+#                    sim = define_sim(; mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax)
+#                    solve(sim_directory(), sim, make_model)
+#                end
 
-            end
-        end
-    end
-end
+#            end
+#        end
+#    end
+#end
