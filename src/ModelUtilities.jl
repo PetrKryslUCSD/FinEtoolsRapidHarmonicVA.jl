@@ -742,7 +742,8 @@ function two_stage_free_enh(cdir, sim, make_model)
 
         alg = lins[1](size(K, 1), size(K, 2), typeof(F))
         vs = []
-        for r in resonance_list
+        for (i, r) in enumerate(resonance_list)
+            @show (i, r)
             f = approxfs[r]
             omega = 2*pi*f;
 
@@ -751,8 +752,8 @@ function two_stage_free_enh(cdir, sim, make_model)
             
             DU /= norm(DU)
             # Replace the least significant modes
-            nr = size(approxevec, 2) - length(resonance_list) + r
-            approxevec[:, nr] = DU
+            ni = size(approxevec, 2) - length(resonance_list) + i
+            approxevec[:, ni] = DU
             # Append to the modes that came from the eigenvalue analysis
             #approxevec = hcat(approxevec, DU)
         end
