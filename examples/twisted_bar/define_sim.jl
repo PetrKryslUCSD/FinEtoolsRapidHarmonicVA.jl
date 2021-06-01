@@ -155,6 +155,8 @@ function define_sim(; kws...)
     prop["alpha"] = 1.5
     prop["reduction_method"] = "free_reduced"
     prop["harmonic_method"] = "modal"
+    prop["itmax"] = 30
+    prop["linsolve_method"] = "minres"
 
     # Overrides
     for k in keys(kws)

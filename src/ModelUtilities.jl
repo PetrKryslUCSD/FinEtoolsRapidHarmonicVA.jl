@@ -721,41 +721,44 @@ function two_stage_free_enh(cdir, sim, make_model)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
     end
     approxevec = evec
+    @info "EV problem: $(round(timing["EV problem"], digits=2))"
 
     println("Approximate natural frequencies: $(round.(approxfs, digits=4)) [Hz]")
     
-    # The following works, but it is expensive
+    # Add additional vectors due to resonance residuals
+
+    itmax = prop["itmax"]
+    linsolve_method = prop["linsolve_method"]
+    lins = (nothing, nothing)
+    if linsolve_method == "minres"
+        lins = (MinresSolver, minres!)
+    else
+        @error "Unknown linear system solver"
+    end
     timing["Additional vectors"] = @elapsed begin
         resonance_list = 1:4
          # Reconstruct the approximate eigenvectors
         approxevec = Phi*real(approxevec)
 
+        alg = lins[1](size(K, 1), size(K, 2), typeof(F))
         vs = []
         for r in resonance_list
             f = approxfs[r]
             omega = 2*pi*f;
 
-            # KrylovKit
-            #alg = GMRES(maxiter = 3, tol = 0.0)
-            #U, info = linsolve((-omega^2*M + K), F, approxevec[:, r], alg)
-            #DU = U - approxevec[:, r]
-            
-            # Krylov
-            alg = MinresSolver(size(K, 1), size(K, 2), typeof(F))
             x0 = approxevec[:, r]
-            (DU, stats) = minres!(alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = 30, verbose=1)
+            (DU, stats) = lins[2](alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
             
             DU /= norm(DU)
             # Replace the least significant modes
-            @show nr = size(approxevec, 2) - length(resonance_list) + r
+            nr = size(approxevec, 2) - length(resonance_list) + r
             approxevec[:, nr] = DU
             # Append to the modes that came from the eigenvalue analysis
             #approxevec = hcat(approxevec, DU)
         end
    
     end
-    @show timing["Additional vectors"]
-
+     
     rd = Dict()
 
     rd["number_of_nodes"] = count(fens)
