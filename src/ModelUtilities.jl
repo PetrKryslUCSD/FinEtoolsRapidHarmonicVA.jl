@@ -729,26 +729,39 @@ function two_stage_free_enh(cdir, sim, make_model)
 
     itmax = prop["itmax"]
     linsolve_method = prop["linsolve_method"]
-    lins = (nothing, nothing)
-    if linsolve_method == "minres"
-        lins = (MinresSolver, minres!)
-    else
-        @error "Unknown linear system solver"
-    end
+    @info "Enhancement: $(linsolve_method) w $(itmax) iterations"
     timing["Additional vectors"] = @elapsed begin
+
+        alg = nothing; met = nothing
+        if linsolve_method == "minres"
+            alg = MinresSolver(size(K, 1), size(K, 2), typeof(F))
+            met = minres!
+        elseif linsolve_method == "symmlq"
+            alg = SymmlqSolver(size(K, 1), size(K, 2), typeof(F))
+            met = symmlq!
+        elseif linsolve_method == "diom"
+            alg = DiomSolver(size(K, 1), size(K, 2), 20, typeof(F))
+            met = diom!
+        else
+            @error "Unknown linear system solver"
+        end
+
         resonance_list = 1:4
          # Reconstruct the approximate eigenvectors
         approxevec = Phi*real(approxevec)
 
-        alg = lins[1](size(K, 1), size(K, 2), typeof(F))
+        #dM = diag(M)
+        #dK = diag(K)
+
         vs = []
         for (i, r) in enumerate(resonance_list)
-            @show (i, r)
             f = approxfs[r]
             omega = 2*pi*f;
 
             x0 = approxevec[:, r]
-            (DU, stats) = lins[2](alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
+            #P  = sparse(1:length(dM), 1:length(dM), 1.0 ./ (-omega^2*dM + dK))
+            #(DU, stats) = lins[2](alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; M = P, atol = 0.0, rtol = 0.0, itmax = itmax, verbose=1)
+            (DU, stats) = met(alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
             
             DU /= norm(DU)
             # Replace the least significant modes
@@ -759,6 +772,7 @@ function two_stage_free_enh(cdir, sim, make_model)
         end
    
     end
+    @info "Additional vectors: $(round(timing["Additional vectors"], digits=2))"
      
     rd = Dict()
 
