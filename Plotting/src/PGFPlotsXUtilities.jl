@@ -4,7 +4,7 @@ using JSON
 using DelimitedFiles
 using PGFPlotsX
 using ..PostUtilities
-using ..PostUtilities: reduced_basis_style, reduced_basis_technique
+using ..PostUtilities: reduced_basis_style, reduced_basis_technique, fixupext
 # using Random
 # using Distributions
 using Statistics
