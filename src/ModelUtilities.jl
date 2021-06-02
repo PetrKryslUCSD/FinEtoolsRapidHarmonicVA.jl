@@ -757,17 +757,31 @@ function two_stage_free_enh(cdir, sim, make_model)
         for (i, r) in enumerate(resonance_list)
             f = approxfs[r]
             omega = 2*pi*f;
-
+            # Initial guess of the solution of the force vibration this
+            # frequency. It is a good solution for the reduced system, but not
+            # so good for the full system. The difference will be used as the
+            # additional vector.
             x0 = approxevec[:, r]
+
+            # Strange thing: Jacobi preconditioning not only does not help, it
+            # seems to make convergence worse
+
             #P  = sparse(1:length(dM), 1:length(dM), 1.0 ./ (-omega^2*dM + dK))
             #(DU, stats) = lins[2](alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; M = P, atol = 0.0, rtol = 0.0, itmax = itmax, verbose=1)
+
+            # Without preconditioning
             (DU, stats) = met(alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
             
+            # Normalize the vector to unit length
             DU /= norm(DU)
-            # Replace the least significant modes
+
+            # Replace the least significant modes: the eigenvectors for high
+            # frequencies are replaced by the additional vectors.
             ni = size(approxevec, 2) - length(resonance_list) + i
             approxevec[:, ni] = DU
-            # Append to the modes that came from the eigenvalue analysis
+
+            # An alternative strategy is to append to the modes that came from
+            # the eigenvalue analysis 
             #approxevec = hcat(approxevec, DU)
         end
    
