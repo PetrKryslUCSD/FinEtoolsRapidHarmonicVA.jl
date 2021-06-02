@@ -66,7 +66,7 @@ function free(cdir, sim, make_model)
         fs = real(sqrt.(complex(eval)))/(2*pi)
     end
     println("Natural frequencies: $(round.(fs, digits=4)) [Hz]")
-    println("Time: $(round.(timing["EV problem"], digits=4)) [s]")
+    println("EV problem: $(round.(timing["EV problem"], digits=4)) [s]")
 
     ## Enhance with static solution instead of the last eigenvector
     #timing["Static vector"] = @elapsed begin
@@ -164,9 +164,10 @@ function two_stage_free(cdir, sim, make_model)
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            @show Nc = Int(round(N/1000))
+            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
             nbf1max = minimum(nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
             V = integratefunction(femm, geom, (x) ->  1.0)
@@ -216,7 +217,6 @@ function two_stage_free(cdir, sim, make_model)
     timing["EV problem"] = @elapsed begin
         eval, evec, nconv = _eigs(Kr + mass_shift*Mr, Mr, nmodes)
         approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
-        
     end
 
     timing["Eigenvector reconstruction"] = @elapsed begin
@@ -484,9 +484,10 @@ function two_stage_free_residual(cdir, sim, make_model)
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            @show Nc = Int(round(N/1000))
+            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
             nbf1max = minimum(nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
             V = integratefunction(femm, geom, (x) ->  1.0)
@@ -676,9 +677,10 @@ function two_stage_free_enh(cdir, sim, make_model)
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            @show Nc = Int(round(N/1000))
+            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
             nbf1max = minimum(nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
             V = integratefunction(femm, geom, (x) ->  1.0)
@@ -855,9 +857,10 @@ function two_stage_free_enhanced(cdir, sim, make_model)
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            @show Nc = Int(round(N/1000))
+            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
             nbf1max = minimum(nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
             V = integratefunction(femm, geom, (x) ->  1.0)
@@ -1025,9 +1028,10 @@ function conc_basis_only(cdir, sim, make_model)
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            @show Nc = Int(round(N/1000))
+            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
             nbf1max = minimum(nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
             V = integratefunction(femm, geom, (x) ->  1.0)
@@ -1115,7 +1119,7 @@ function harmonic_vibration_modal(cdir, sim, make_model)
     f = results["reduced_basis"]["basis"]["file"]
     evecs = retrieve_matrix(joinpath(cdir, f))
     @info "Number of modes: $(size(evecs, 2))"
-
+        
     transfm(m, evecs) = (evecs' * m * evecs)
     transfv(v, evecs) = (evecs' * v)
     timing["Reduced matrices"] = @elapsed begin
@@ -1480,9 +1484,10 @@ function two_stage_wyd_ritz(cdir, sim, make_model)
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            @show Nc = Int(round(N/1000))
+            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
             nbf1max = minimum(nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
             V = integratefunction(femm, geom, (x) ->  1.0)
