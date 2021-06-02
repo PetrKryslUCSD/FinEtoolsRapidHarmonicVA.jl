@@ -1,0 +1,13 @@
+﻿"Symbol";"Value";"Unit";
+"TraceParts.PartNumber";"10-08012001-119755";"";
+"REFERENCE";"B 250/12,5";"";
+"TraceParts.PartTitle";"Brake disk form B";"";
+"TraceParts.InstanceId";"10-08012001-1197557UGXME8K42VSBGEHR7TNXNWTF";"";
+"DESIGN";"Brake disk B 250/12,5 bore Ø36";"";
+"TraceParts.PartStatus";"Published";"";
+"TraceParts.PartStatusId";"";"";
+"SUPPLIER";"SIAM RINGSPANN";"";
+"TraceParts.PartVersion";"1.4.3";"";
+"TRACEPARTS";"TRACEPARTS";"";
+"TraceParts.PartLanguage";"en";"";
+"TraceParts.ClassPath";"SIAM_RINGSPANN:10-08012001-119755";"";
