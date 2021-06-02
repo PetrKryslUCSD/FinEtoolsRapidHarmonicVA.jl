@@ -1,15 +1,16 @@
+module PostUtilities
+
 using JSON
 using DelimitedFiles
-
-#using PGFPlotsX
-# using Random
-# using Distributions
 using Statistics
 # using StatsBase
 using LinearAlgebra
 using Statistics
-using FinEtools
-using FinEtoolsRapidHarmonicVA   
+
+function fixupext(n, ext)
+    f, e = splitext(n)
+    return f * ext
+end
 
 function correlation(sim1 = "sim1", sim2 = "sim2")
     prop = retrieve_json(sim1)
@@ -46,9 +47,9 @@ end
 
 function reduced_basis_technique(reduction_method)
     if reduction_method == "free"
-        return "Full VB"
+        return "FV"
     elseif reduction_method == "two_stage_free"
-        return "2S VB"
+        return "2SV"
     elseif reduction_method == "two_stage_free_residual"
         return "2S VB/RE"
     elseif reduction_method == "two_stage_free_enhanced"
@@ -58,7 +59,9 @@ function reduced_basis_technique(reduction_method)
     elseif reduction_method == "lanczos_ritz"
         return "LNC"
     elseif reduction_method == "two_stage_wyd_ritz"
-        return "2S WYD"
+        return "2SWYD"
+    elseif reduction_method == "two_stage_free_enh"
+        return "2SVE"
     else
         return ""
     end
@@ -66,7 +69,6 @@ end
 
 
 function reduced_basis_style(reduction_method)
-    @show reduction_method
     if reduction_method == "free"
         return ("red", "diamond")
     elseif reduction_method == "two_stage_free"
@@ -85,6 +87,8 @@ function reduced_basis_style(reduction_method)
         return ("black!40!white", "triangle")
     elseif (reduction_method == "two_stage_free_residual")
         return ("orange", "square")
+    elseif reduction_method == "two_stage_free_enh"
+        return ("magenta", "star")
     else
         return ("", "")
     end
@@ -106,7 +110,11 @@ function reduced_basis_time(reduction_method, tims)
         return sum([tims[k] for k in ["Factorize stiffness", "Ritz-vector matrix"]])
     elseif reduction_method == "two_stage_wyd_ritz"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "Factorize stiffness", "Ritz-vector matrix"]])
+    elseif reduction_method == "two_stage_free_enh"
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     else
         return 0.0
     end
 end
+
+end # PlotUtilities

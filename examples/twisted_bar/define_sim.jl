@@ -155,6 +155,8 @@ function define_sim(; kws...)
     prop["alpha"] = 1.5
     prop["reduction_method"] = "free_reduced"
     prop["harmonic_method"] = "modal"
+    prop["itmax"] = 0
+    prop["linsolve_method"] = ""
 
     # Overrides
     for k in keys(kws)
@@ -162,9 +164,15 @@ function define_sim(; kws...)
     end
 
     prop["fmax"] = 2*prop["frequency_sweep"][2]
-        
-    sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
 
+    # Generate the name 
+    if prop["reduction_method"] == "two_stage_free_enh"
+        @assert prop["linsolve_method"] != "" "Linear system of equation solver must be provided"
+        sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])_$(prop["linsolve_method"])_$(prop["itmax"])"
+    else # Everyone else
+        sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
+    end
+    
     if (!isfile(sim * ".json")) || 
         ((:force_overwrite in keys(kws)) && kws[:force_overwrite])
         store_json(joinpath(sim_directory(), sim * ".json"), prop)

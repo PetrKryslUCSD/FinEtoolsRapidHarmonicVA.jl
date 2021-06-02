@@ -2,6 +2,8 @@ using Metis
 import LinearAlgebra: eigen, qr, norm, mul!, dot, cholesky, Symmetric
 using Statistics
 using SparseArrays
+using KrylovKit
+using Krylov
 using Arpack
 using FinEtools
 using FinEtoolsDeforLinear
@@ -530,23 +532,26 @@ function two_stage_free_residual(cdir, sim, make_model)
         
     # The following works, but it is expensive
     timing["Additional vectors"] = @elapsed begin
-        frequencies = logspace(log10(prop["frequency_sweep"][1]), log10(prop["frequency_sweep"][2]), 10)
-
+        @show frequencies = approxfs[1:2]
+        @time  begin
         C = model["C"]
         Cr = transfm(C, Phi)
         Fr = transfv(F, Phi)
+    end
+    @time begin
         vs = []
         for f in frequencies
             omega = 2*pi*f;
             Ur = (-omega^2*Mr + (1im*omega)*Cr + Kr)\Fr;
-            res = F - K*(Phi*Ur)
-            if (norm(imag.(res)) > 1e-10)
-                push!(vs, imag.(res)/norm(imag.(res)))
+            resu = diag((-omega^2*M + (1im*omega)*C + K), 0) .\ (F - (-omega^2*M + (1im*omega)*C + K)*(Phi*Ur))
+            if (norm(imag.(resu)) > 1e-10)
+                push!(vs, vec(imag.(resu)/norm(imag.(resu))))
             end
-            if (norm(real.(res)) > 1e-10)
-                push!(vs, real.(res)/norm(real.(res)))
+            if (norm(real.(resu)) > 1e-10)
+                push!(vs, vec(real.(resu)/norm(real.(resu))))
             end
         end
+    end
 
         # for k in axes(approxevec, 2)
         #     @show dot(approxevec[:, k], vs[1])
@@ -591,7 +596,7 @@ function two_stage_free_residual(cdir, sim, make_model)
 
     timing["orthogonalizeExtra"] = @elapsed begin
         norig = size(approxevec, 2) - length(vs)
-        P = approxevec[:, norig+1:end]'*approxevec[:, norig+1:end]
+        P = Matrix(approxevec[:, norig+1:end]'*approxevec[:, norig+1:end])
         eigenObj = eigen(P)
         selectVectors = findall(abs.(eigenObj.values) .> 1e-8)
         # @show selectVectors
@@ -613,6 +618,171 @@ function two_stage_free_residual(cdir, sim, make_model)
 
     rd["frequencies"] = approxfs
     timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"] + timing["Additional vectors"] + timing["orthogonalizeExtra"]
+    rd["timing"] = timing
+
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    rd["basis"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), approxevec)
+    file = joinpath(matricesdir, with_extension(sim * "-eval", "h5"))
+    rd["eigenvalues"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["eigenvalues"]["file"]), eval)
+
+    results["reduced_basis"] = rd
+    store_json(joinpath(cdir, resultsfile), results)
+
+    true
+end
+
+function two_stage_free_enh(cdir, sim, make_model)
+    @info "Free Vibration (Enhanced with partial solve)"
+    prop = retrieve_json(joinpath(cdir, sim))
+
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
+
+    results = Dict()
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
+    end
+
+    timing = Dict{String, FFlt}()
+
+    timing["Problem setup"] = @elapsed begin
+        model = make_model(prop)       
+    end
+
+    fens = model["fens"]
+    @info "$(count(fens)) nodes"
+
+    femm = model["femm"]
+    geom = model["geom"]
+    V = integratefunction(femm, geom, (x) ->  1.0)
+
+    N = count(fens)
+    E = prop["E"]
+    nu = prop["nu"]
+    rho = prop["rho"]
+    fmax = prop["fmax"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
+
+    mor = nothing
+    timing["Partitioning"] = @elapsed begin
+        partitioning = Int[]
+        if "partitioning_method" in keys(model) && 
+            model["partitioning_method"] == "metis"
+            @info "Metis partitioning"
+            C = connectionmatrix(femm, count(fens))
+            g = Metis.graph(C; check_hermitian=true)
+            @show Nc = Int(round(N/1000))
+            partitioning = Metis.partition(g, Nc; alg = :KWAY)
+            nbf1max = minimum(nbf1maxclamp)
+        else # Default: Recursive Inertial Bisection
+            @info "RIB partitioning"
+            V = integratefunction(femm, geom, (x) ->  1.0)
+            alpha = prop["alpha"]
+            smallestdimension = prop["smallestdimension"]
+            nbf1maxclamp = prop["nbf1maxclamp"]
+            Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
+            @info "Number of clusters $Nc, number of functions $nbf1max"
+            partitioning = nodepartitioning(fens, Nc)
+        end
+        mor = CoNCData(fens, partitioning)
+    end
+
+    u = model["u"]
+
+    timing["Transformation matrix"] = @elapsed begin
+        Phi = transfmatrix(mor, LegendreBasis, nbf1max, u);
+    end
+
+    nmodes = prop["nmodes"]
+    mass_shift = prop["mass_shift"]
+    K = model["K"]
+    M = model["M"]
+    F = model["F"]
+    @info "Sparsity of K: $(nnz(K)/prod(size(K)))"
+    @info "Sparsity of M: $(nnz(M)/prod(size(M)))"
+
+    transfm(m, evecs) = (evecs' * m * evecs)
+    transfv(v, evecs) = (evecs' * v)
+    timing["Reduced matrices"] = @elapsed begin
+        Kr = transfm(K, Phi)
+        #Kr .= 0.5 * (Kr .+ transpose(Kr))
+        Mr = transfm(M, Phi)
+        #Mr .= 0.5 * (Mr .+ transpose(Mr))
+    end
+    @info "Transformation matrix dimensions $(size(Phi))"
+
+    timing["EV problem"] = @elapsed begin
+        eval, evec, nconv = _eigs(Kr + mass_shift*Mr, Mr, nmodes)
+        approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
+    end
+    approxevec = evec
+    @info "EV problem: $(round(timing["EV problem"], digits=2))"
+
+    println("Approximate natural frequencies: $(round.(approxfs, digits=4)) [Hz]")
+    
+    # Add additional vectors due to resonance residuals
+
+    itmax = prop["itmax"]
+    linsolve_method = prop["linsolve_method"]
+    @info "Enhancement: $(linsolve_method) w $(itmax) iterations"
+    timing["Additional vectors"] = @elapsed begin
+
+        alg = nothing; met = nothing
+        if linsolve_method == "minres"
+            alg = MinresSolver(size(K, 1), size(K, 2), typeof(F))
+            met = minres!
+        elseif linsolve_method == "symmlq"
+            alg = SymmlqSolver(size(K, 1), size(K, 2), typeof(F))
+            met = symmlq!
+        elseif linsolve_method == "diom"
+            alg = DiomSolver(size(K, 1), size(K, 2), 20, typeof(F))
+            met = diom!
+        else
+            @error "Unknown linear system solver"
+        end
+
+        resonance_list = 1:4
+         # Reconstruct the approximate eigenvectors
+        approxevec = Phi*real(approxevec)
+
+        #dM = diag(M)
+        #dK = diag(K)
+
+        vs = []
+        for (i, r) in enumerate(resonance_list)
+            f = approxfs[r]
+            omega = 2*pi*f;
+
+            x0 = approxevec[:, r]
+            #P  = sparse(1:length(dM), 1:length(dM), 1.0 ./ (-omega^2*dM + dK))
+            #(DU, stats) = lins[2](alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; M = P, atol = 0.0, rtol = 0.0, itmax = itmax, verbose=1)
+            (DU, stats) = met(alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
+            
+            DU /= norm(DU)
+            # Replace the least significant modes
+            ni = size(approxevec, 2) - length(resonance_list) + i
+            approxevec[:, ni] = DU
+            # Append to the modes that came from the eigenvalue analysis
+            #approxevec = hcat(approxevec, DU)
+        end
+   
+    end
+    @info "Additional vectors: $(round(timing["Additional vectors"], digits=2))"
+     
+    rd = Dict()
+
+    rd["number_of_nodes"] = count(fens)
+    rd["number_of_modes"] = size(approxevec, 2)
+    rd["number_of_clusters"] = Nc
+    rd["nbf1max"] = nbf1max
+
+    rd["frequencies"] = approxfs
+    timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"] + timing["Additional vectors"] 
     rd["timing"] = timing
 
     file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
@@ -1412,6 +1582,8 @@ function reduced_basis(cdir, sim, make_model)
         conc_basis_only(cdir, sim, make_model)
     elseif prop["reduction_method"] == "two_stage_wyd_ritz"
         two_stage_wyd_ritz(cdir, sim, make_model)
+    elseif prop["reduction_method"] == "two_stage_free_enh"
+        two_stage_free_enh(cdir, sim, make_model)       
     elseif prop["reduction_method"] == "none"
     else
         @error "Unknown reduced-basis method"
