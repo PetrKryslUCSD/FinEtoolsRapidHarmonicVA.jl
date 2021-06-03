@@ -19,14 +19,14 @@ function make_mesh(prop)
 
     # Clamped face of the shaft hole
     #cpl = output["nsets"]["CIRCULAR-PATCH"]
-    clampedl = output["nsets"]["SHAFT"]
+    clampedl = output["nsets"]["SET-SHAFT"]
     
     # Traction on the circular sub-area of the disk 
     boundaryfes  =   meshboundary(fes);
-    loadedl = selectelem(fens, boundaryfes, withnodes = output["nsets"]["CIRCULAR-PATCH"]);
+    loadedl = selectelem(fens, boundaryfes, withnodes = output["nsets"]["SET-CIRCULAR-PATCH"]);
         
     # Sensor Location
-    sl = output["nsets"]["CIRCUMFERENCE-EDGE"]
+    sl = output["nsets"]["SET-CIRCUMFERENCE-EDGE"]
     p = sortperm(fens.xyz[sl, 1])
     sensorn = sl[p][1]
 
@@ -104,10 +104,10 @@ end
 function material_parameters()
     # Material parameters of the structure
     
-    E = 70000*phun("MPa")::FFlt;
-    nu = 0.33::FFlt;
-    rho = 2700*phun("KG/M^3")::FFlt;
-    dimensions = [250, 15, 25]*phun("mm"); 
+    E = 210000*phun("MPa")::FFlt;
+    nu = 0.3::FFlt;
+    rho = 7850*phun("KG/M^3")::FFlt;
+    dimensions = [250, 15]*phun("mm"); 
     mass_shift = 0; # to resolve rigid body modes
     
     return E, nu, rho, dimensions, mass_shift
@@ -122,8 +122,6 @@ function common_parameters()
     prop["graphicsdir"] = "graphics"
     prop["matricesdir"] = "matrices"
 
-    
-
     # Material Parameters, geometry
     E, nu, rho, dimensions, mass_shift = material_parameters() 
     
@@ -133,15 +131,15 @@ function common_parameters()
     prop["dimensions"] = dimensions
     prop["mass_shift"] = mass_shift
     prop["smallestdimension"] = minimum(dimensions)
-    prop["nbf1maxclamp"] = (5, 5)
-    prop["alpha"] = 1.5
+    prop["nbf1maxclamp"] = (3, 6)
+    prop["alpha"] = 1.25
 
     # Sensor location
     #prop["sensor_location"] = [dimensions[1], 0.0, 0.0]
     prop["sensor_direction"] = 3
 
     # Frequency Sweep
-    prop["frequency_sweep"] = (100, 10000, 600) # from, to, how many
+    prop["frequency_sweep"] = (1000, 20000, 1000) # from, to, how many
 
     return prop
 end
@@ -151,19 +149,38 @@ function define_sim(; kws...)
     
     # Defaults
     prop["namebase"] = "sim"
-    prop["mesh_name"] = "b250-brake-disc.inp"
+    prop["mesh_n"] = 1
     prop["nmodes"] = 60
     prop["reduction_method"] = "free_reduced"
     prop["harmonic_method"] = "modal"
+    prop["itmax"] = 0
+    prop["resonance_list"] = 1:6
+    prop["linsolve_method"] = ""
 
     # Overrides
     for k in keys(kws)
         prop[String(k)] = kws[k]
     end
 
+    mesh_name = Dict(
+        1 => "b250-brake-disk-10096.inp",   
+        2 => "b250-brake-disk-21706.inp",
+        3 => "b250-brake-disk-52463.inp",
+        4 => "b250-brake-disk-130051.inp",  
+        5 => "b250-brake-disk-246934.inp",
+        )
+
+    prop["mesh_name"]  = mesh_name[prop["mesh_n"]]
+
     prop["fmax"] = 2*prop["frequency_sweep"][2]
-        
-    sim = "$(prop["namebase"])_mesh_$(prop["mesh_name"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
+
+    # Generate the name 
+    if prop["reduction_method"] == "two_stage_free_enh"
+        @assert prop["linsolve_method"] != "" "Linear system of equation solver must be provided"
+        sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])_$(prop["linsolve_method"])_$(prop["itmax"])"
+    else # Everyone else
+        sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
+    end
 
     if (!isfile(sim * ".json")) || 
         ((:force_overwrite in keys(kws)) && kws[:force_overwrite])

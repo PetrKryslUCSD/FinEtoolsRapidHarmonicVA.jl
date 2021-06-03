@@ -104,7 +104,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
     @gp  :- "set logscale x" :-
     @gp  :- "set logscale y" :-
     @gp  :- "set xlabel 'Frequency [Hz]'" :-
-    @gp  :- "set ylabel 'FRF [deg]'" :-
+    @gp  :- "set ylabel 'FRF [mm]'" :-
     @gp  :- "set title '$(title)'" 
 
 
