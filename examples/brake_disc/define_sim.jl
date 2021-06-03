@@ -104,10 +104,10 @@ end
 function material_parameters()
     # Material parameters of the structure
     
-    E = 70000*phun("MPa")::FFlt;
-    nu = 0.33::FFlt;
-    rho = 2700*phun("KG/M^3")::FFlt;
-    dimensions = [250, 15, 25]*phun("mm"); 
+    E = 210000*phun("MPa")::FFlt;
+    nu = 0.3::FFlt;
+    rho = 7850*phun("KG/M^3")::FFlt;
+    dimensions = [250, 15]*phun("mm"); 
     mass_shift = 0; # to resolve rigid body modes
     
     return E, nu, rho, dimensions, mass_shift
@@ -122,8 +122,6 @@ function common_parameters()
     prop["graphicsdir"] = "graphics"
     prop["matricesdir"] = "matrices"
 
-    
-
     # Material Parameters, geometry
     E, nu, rho, dimensions, mass_shift = material_parameters() 
     
@@ -133,8 +131,8 @@ function common_parameters()
     prop["dimensions"] = dimensions
     prop["mass_shift"] = mass_shift
     prop["smallestdimension"] = minimum(dimensions)
-    prop["nbf1maxclamp"] = (5, 5)
-    prop["alpha"] = 1.5
+    prop["nbf1maxclamp"] = (3, 6)
+    prop["alpha"] = 1.25
 
     # Sensor location
     #prop["sensor_location"] = [dimensions[1], 0.0, 0.0]
@@ -156,6 +154,7 @@ function define_sim(; kws...)
     prop["reduction_method"] = "free_reduced"
     prop["harmonic_method"] = "modal"
     prop["itmax"] = 0
+    prop["resonance_list"] = 1:6
     prop["linsolve_method"] = ""
 
     # Overrides
@@ -178,9 +177,9 @@ function define_sim(; kws...)
     # Generate the name 
     if prop["reduction_method"] == "two_stage_free_enh"
         @assert prop["linsolve_method"] != "" "Linear system of equation solver must be provided"
-        sim = "$(prop["namebase"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])_$(prop["linsolve_method"])_$(prop["itmax"])"
+        sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])_$(prop["linsolve_method"])_$(prop["itmax"])"
     else # Everyone else
-        sim = "$(prop["namebase"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
+        sim = "$(prop["namebase"])_mesh_$(prop["mesh_n"])_nmodes_$(prop["nmodes"])_$(prop["reduction_method"])_$(prop["harmonic_method"])"
     end
 
     if (!isfile(sim * ".json")) || 
