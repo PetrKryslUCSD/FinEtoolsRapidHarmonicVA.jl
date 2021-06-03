@@ -156,6 +156,7 @@ function define_sim(; kws...)
     prop["reduction_method"] = "free_reduced"
     prop["harmonic_method"] = "modal"
     prop["itmax"] = 0
+    prop["resonance_list"] = 1:4
     prop["linsolve_method"] = ""
 
     # Overrides
