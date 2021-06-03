@@ -95,14 +95,19 @@ function free(cdir, sim, make_model)
     true
 end
 
-function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension = Inf, nbf1maxclamp = (3, 7))
+function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, powertwo = true, smallestdimension = Inf, nbf1maxclamp = (3, 7))
     V, N, E, nu, rho, fmax, alpha
     c = sqrt(E / 2 / (1 + nu) / rho)
     lambda = c / fmax
     d = min(lambda, smallestdimension)
     Ncfloat = V / d^3
-    Nchi = nextpow(2, Ncfloat)
-    Nclo =    Ncfloat > 1.0 ? prevpow(2, Ncfloat) : 2
+    if powertwo
+        Nchi = nextpow(2, Ncfloat)
+        Nclo =    Ncfloat > 1.0 ? prevpow(2, Ncfloat) : 2
+    else
+        Nchi = Int(round(Ncfloat))
+        Nclo = Nchi
+    end
     if Nchi - Ncfloat > Ncfloat - Nclo
         Nc = Nclo
     else
@@ -157,30 +162,28 @@ function two_stage_free(cdir, sim, make_model)
     nbf1maxclamp = prop["nbf1maxclamp"]
 
     mor = nothing
+    V = integratefunction(femm, geom, (x) ->  1.0)
+    alpha = prop["alpha"]
+    smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
+    partitioning_method = "partitioning_method" in keys(model) ?  model["partitioning_method"] : "rib"
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, (partitioning_method == "rib"), smallestdimension, nbf1maxclamp)
+    @info "Number of clusters $Nc, number of functions $nbf1max"
+    
     timing["Partitioning"] = @elapsed begin
         partitioning = Int[]
-        if "partitioning_method" in keys(model) && 
-            model["partitioning_method"] == "metis"
+        if partitioning_method == "metis"
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
-            nbf1max = minimum(nbf1maxclamp)
-            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
-            V = integratefunction(femm, geom, (x) ->  1.0)
-            alpha = prop["alpha"]
-            smallestdimension = prop["smallestdimension"]
-            nbf1maxclamp = prop["nbf1maxclamp"]
-            Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
-            @info "Number of clusters $Nc, number of functions $nbf1max"
             partitioning = nodepartitioning(fens, Nc)
         end
         mor = CoNCData(fens, partitioning)
     end
-
+    
     u = model["u"]
 
     timing["Transformation matrix"] = @elapsed begin
@@ -285,25 +288,23 @@ function two_stage_free_enh(cdir, sim, make_model)
     nbf1maxclamp = prop["nbf1maxclamp"]
 
     mor = nothing
+    V = integratefunction(femm, geom, (x) ->  1.0)
+    alpha = prop["alpha"]
+    smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
+    partitioning_method = "partitioning_method" in keys(model) ?  model["partitioning_method"] : "rib"
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, (partitioning_method == "rib"), smallestdimension, nbf1maxclamp)
+    @info "Number of clusters $Nc, number of functions $nbf1max"
+    
     timing["Partitioning"] = @elapsed begin
         partitioning = Int[]
-        if "partitioning_method" in keys(model) && 
-            model["partitioning_method"] == "metis"
+        if partitioning_method == "metis"
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
-            nbf1max = minimum(nbf1maxclamp)
-            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
-            V = integratefunction(femm, geom, (x) ->  1.0)
-            alpha = prop["alpha"]
-            smallestdimension = prop["smallestdimension"]
-            nbf1maxclamp = prop["nbf1maxclamp"]
-            Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
-            @info "Number of clusters $Nc, number of functions $nbf1max"
             partitioning = nodepartitioning(fens, Nc)
         end
         mor = CoNCData(fens, partitioning)
@@ -343,8 +344,8 @@ function two_stage_free_enh(cdir, sim, make_model)
     println("Approximate natural frequencies: $(round.(approxfs, digits=4)) [Hz]")
     
     # Add additional vectors due to resonance residuals
-
     itmax = prop["itmax"]
+    resonance_list = prop["resonance_list"]
     linsolve_method = prop["linsolve_method"]
     @info "Enhancement: $(linsolve_method) w $(itmax) iterations"
     timing["Additional vectors"] = @elapsed begin
@@ -363,7 +364,6 @@ function two_stage_free_enh(cdir, sim, make_model)
             @error "Unknown linear system solver"
         end
 
-        resonance_list = 1:4
          # Reconstruct the approximate eigenvectors
         approxevec = Phi*real(approxevec)
 
@@ -380,6 +380,7 @@ function two_stage_free_enh(cdir, sim, make_model)
             # additional vector.
             x0 = approxevec[:, r]
 
+            # With preconditioning
             # Strange thing: Jacobi preconditioning not only does not help, it
             # seems to make convergence worse
 
@@ -659,30 +660,27 @@ function two_stage_wyd_ritz(cdir, sim, make_model)
     nbf1maxclamp = prop["nbf1maxclamp"]
 
     mor = nothing
+    V = integratefunction(femm, geom, (x) ->  1.0)
+    alpha = prop["alpha"]
+    smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
+    partitioning_method = "partitioning_method" in keys(model) ?  model["partitioning_method"] : "rib"
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, (partitioning_method == "rib"), smallestdimension, nbf1maxclamp)
+    @info "Number of clusters $Nc, number of functions $nbf1max"
+    
     timing["Partitioning"] = @elapsed begin
         partitioning = Int[]
-        if "partitioning_method" in keys(model) && 
-            model["partitioning_method"] == "metis"
+        if partitioning_method == "metis"
             @info "Metis partitioning"
             C = connectionmatrix(femm, count(fens))
             g = Metis.graph(C; check_hermitian=true)
-            Nc = Int(round(N/1000))
             partitioning = Metis.partition(g, Nc; alg = :KWAY)
-            nbf1max = minimum(nbf1maxclamp)
-            @info "Number of clusters $Nc, number of functions $nbf1max"
         else # Default: Recursive Inertial Bisection
             @info "RIB partitioning"
-            V = integratefunction(femm, geom, (x) ->  1.0)
-            alpha = prop["alpha"]
-            smallestdimension = prop["smallestdimension"]
-            nbf1maxclamp = prop["nbf1maxclamp"]
-            Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, smallestdimension, nbf1maxclamp)
-            @info "Number of clusters $Nc, number of functions $nbf1max"
             partitioning = nodepartitioning(fens, Nc)
         end
         mor = CoNCData(fens, partitioning)
     end
-
     u = model["u"]
 
     timing["Transformation matrix"] = @elapsed begin
