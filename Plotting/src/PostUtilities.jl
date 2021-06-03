@@ -82,6 +82,8 @@ function reduced_basis_style(reduction_method)
         return ("black!40!white", "triangle")
     elseif (reduction_method == "two_stage_free_residual")
         return ("red!40!white", "square")
+    elseif (reduction_method == "two_stage_free_symmlq")
+        return ("blue!40!white", "diamond")
     else
         return ("", "")
     end

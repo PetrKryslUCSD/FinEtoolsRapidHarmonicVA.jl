@@ -7,13 +7,13 @@ using FinEtoolsRapidHarmonicVA
 
 include("Plotting/src/Plotting.jl")
 
-using .Plotting: plot_frf_errors
+using .Plotting: plot_frf_errors, plot_timing
 
 include("examples/twisted_bar/define_sim.jl")
 
 #reduction_methods = ["free", "two_stage_free", "wyd_ritz", "two_stage_wyd_ritz"]
 # reduction_methods = ["free",]
-reduction_methods = ["two_stage_free", "conc_reduced", "two_stage_free_residual"]
+reduction_methods = ["two_stage_free", "two_stage_free_residual"]
 #reduction_methods = ["lanczos_ritz", "wyd_ritz"]
 #reduction_methods = ["two_stage_free"]
 
@@ -21,7 +21,7 @@ reduction_methods = ["two_stage_free", "conc_reduced", "two_stage_free_residual"
 
 # Burn in
 # for mesh_n in [4, ]
-#     for nmodes in [25, ]
+#     for nmodes in [10, ]
 
 #         simd = define_sim(;mesh_n=mesh_n, nmodes=0, reduction_method="none", harmonic_method="direct")
 #         # solve(sim_directory(), simd, make_model)
