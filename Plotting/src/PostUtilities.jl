@@ -50,8 +50,8 @@ function reduced_basis_technique(reduction_method)
         return "FV"
     elseif reduction_method == "two_stage_free"
         return "2SV"
-    elseif reduction_method == "two_stage_free_residual"
-        return "2S VB/RE"
+    elseif reduction_method == "two_stage_free_resid"
+        return "2S VB/R"
     elseif reduction_method == "two_stage_free_enhanced"
         return "Red VB/enh"
     elseif reduction_method == "wyd_ritz"
@@ -85,7 +85,7 @@ function reduced_basis_style(reduction_method)
          return ("black", "+")
     elseif (reduction_method == "conc_reduced")
         return ("black!40!white", "triangle")
-    elseif (reduction_method == "two_stage_free_residual")
+    elseif (reduction_method == "two_stage_free_resid")
         return ("orange", "square")
     elseif reduction_method == "two_stage_free_enh"
         return ("magenta", "star")
@@ -100,8 +100,8 @@ function reduced_basis_time(reduction_method, tims)
         return sum([tims[k] for k in ["EV problem"]]) 
     elseif reduction_method == "two_stage_free"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction"]])
-    elseif reduction_method == "two_stage_free_residual"
-        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction", "Additional vectors", "orthogonalizeExtra"]])
+    elseif reduction_method == "two_stage_free_resid"
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction", "Additional vectors",]])
     elseif reduction_method == "two_stage_free_enhanced"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     elseif reduction_method == "wyd_ritz"
