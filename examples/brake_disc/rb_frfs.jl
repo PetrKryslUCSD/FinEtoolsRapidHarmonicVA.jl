@@ -13,14 +13,14 @@ using FinEtoolsRapidHarmonicVA
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enhanced", "modal"), ] #  ("lanczos_ritz", "modal")
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ]
 #the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_residual", "modal"),]
-the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
+the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"), ("two_stage_free_resid", "modal"),]
 #the_methods = [("wyd_ritz", "modal"), ("free", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
 
 clear_terminal()
 
 linsolve_method = "minres"
-itmax = 5
-for mesh_n in [1]
+itmax = 20
+for mesh_n in [3]
     for nmodes in [100, ]
         
         sims = []
@@ -31,6 +31,7 @@ for mesh_n in [1]
         
         title = "twisted_bar-frf-mesh_n-$(mesh_n)-$(nmodes)-$(linsolve_method)-$(itmax)"
         file = title * ".pdf"
+        # plot_frf_errors(sim_directory(), sims, file; title = title)
         plot_frf_amplitudes(sim_directory(), sims, file; title = title)
         #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
 
