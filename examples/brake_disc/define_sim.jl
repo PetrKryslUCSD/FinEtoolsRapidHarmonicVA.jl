@@ -139,7 +139,7 @@ function common_parameters()
     prop["sensor_direction"] = 3
 
     # Frequency Sweep
-    prop["frequency_sweep"] = (1000, 20000, 1000) # from, to, how many
+    prop["frequency_sweep"] = (1000, 20000, 10000) # from, to, how many
 
     return prop
 end
