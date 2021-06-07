@@ -370,25 +370,24 @@ function two_stage_free_enh(cdir, sim, make_model)
         #dM = diag(M)
         #dK = diag(K)
 
-        vs = []
+        phi = fill(zero(eltype(approxevec)), size(Phi, 1))
+        x0 = similar(phi)
+        r0 = similar(phi)
         for (i, r) in enumerate(resonance_list)
             f = approxfs[r]
             omega = 2*pi*f;
-            # Initial guess of the solution of the force vibration this
+            # Initial guess of the solution of the forced vibration at this
             # frequency. It is a good solution for the reduced system, but not
             # so good for the full system. The difference will be used as the
             # additional vector.
-            x0 = approxevec[:, r]
+            phi .= view(approxevec, :, r)
 
-            # With preconditioning
-            # Strange thing: Jacobi preconditioning not only does not help, it
-            # seems to make convergence worse
-
-            #P  = sparse(1:length(dM), 1:length(dM), 1.0 ./ (-omega^2*dM + dK))
-            #(DU, stats) = lins[2](alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; M = P, atol = 0.0, rtol = 0.0, itmax = itmax, verbose=1)
+            # Compute residual of the free vibration
+            x0 .= phi
+            r0 .= (-omega^2*(M*x0) + K*x0)
 
             # Without preconditioning
-            (DU, stats) = met(alg, (-omega^2*M + K), F + omega^2*M*x0 - K*x0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
+            (DU, stats) = met(alg, (-omega^2*M + K), r0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=1)
             
             # Normalize the vector to unit length
             DU /= norm(DU)
