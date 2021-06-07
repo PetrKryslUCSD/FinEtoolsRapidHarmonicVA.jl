@@ -3,13 +3,32 @@
 	[
 		{
 			"path": ".",
+            "file_exclude_patterns":
+                        [
+                            "*.json",
+                            "*.pdf",
+            ],
 		},
           {
-			"path": "C:\\Users\\PetrKrysl\\wip\\FinEtoolsRapidHarmonicVA.jl\\examples\\twisted_bar"
+			"path": "C:\\Users\\PetrKrysl\\wip\\twisted_bar - horntail",
+            /*"file_exclude_patterns":
+                        [
+                            "*.json",
+                            "*.pdf",
+            ],*/
 		},
-     ], 
+/*{
+			"path": "C:\\Users\\PetrKrysl\\wip\\twisted_bar - horntail",
+            /*"file_exclude_patterns":
+                        [
+                            "*.json",
+                            "*.pdf",
+            ],* /
+		},*/
+    ], 
     "settings": {
-         // "theme": "Asphalt.sublime-theme",
+        
+        // "theme": "Asphalt.sublime-theme",
          "color_scheme": "Mariana.sublime-color-scheme",
          // "color_scheme": "Monokai.sublime-color-scheme",
          // "color_scheme": "Packages/Color Scheme - Dusk/Dusk.tmTheme",
