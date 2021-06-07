@@ -14,15 +14,24 @@ using Statistics
 using FinEtools
 using FinEtoolsRapidHarmonicVA   
 
-function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf", range = [-Inf, Inf])
-    _plot_frf(cdir, sim_list, filename, :errors, range)
+function clear_terminal()
+    # do nothing
 end
 
-function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf", range = [-Inf, Inf])
-    _plot_frf(cdir, sim_list, filename, :amplitudes, range)
+function saveas(a) 
+    f, e = splitext(a)
+       
+end
+    
+function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="")
+    _plot_frf(cdir, sim_list, filename, :errors, range, title)
 end
 
-function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf])
+function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="")
+    _plot_frf(cdir, sim_list, filename, :amplitudes, range, title)
+end
+
+function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf], title="")
     objects = []
     
     direct_frequencies, direct_ampls, range_indexes = let sim = sim_list[1]
@@ -53,16 +62,16 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         Coordinates([v for v in  zip(direct_frequencies[range_indexes], direct_ampls[range_indexes])])
         )
         push!(objects, p)
-        push!(objects, LegendEntry("Direct"))
+        push!(objects, LegendEntry("Ref"))
         
         direct_frequencies, direct_ampls, range_indexes
     end
 
     siml = sim_list[2:end]
-    if what != :errors
-        siml = sim_list
-        objects = []
-    end
+    # if what != :errors
+    #     siml = sim_list
+    #     # objects = []
+    # end
     for sim in siml
         prop = retrieve_json(joinpath(cdir, sim))
         # Load the data for the graph of the FRF
@@ -96,7 +105,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         push!(objects, p)
         push!(objects, LegendEntry(reduced_basis_technique(prop["reduction_method"])))
     end
-
+    
     @pgf ax = Axis(
         {
             xlabel = "Frequency [hertz]",
@@ -120,15 +129,14 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
 end
 
 
-function plot_frf_errors_direct(sim_list = ["sim1"], filename = "plot.pdf")
-    what = :errors
+function plot_frf_errors_direct(cdir, sim_list = ["sim1"], filename = "plot.pdf"; what = :errors)
     objects = []
     
     direct_frequencies, direct_ampls, top = let sim = sim_list[1]
-        prop = retrieve_json(sim)
+        prop = retrieve_json(joinpath(cdir, sim))
 
         # Load the data for the graph of the FRF
-        j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
+        j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
         mesh_n = prop["mesh_n"]
         results = retrieve_json(j)
         hvd = results["harmonic_vibration"] 
@@ -136,7 +144,7 @@ function plot_frf_errors_direct(sim_list = ["sim1"], filename = "plot.pdf")
         direct_frequencies = hvd["sweep_frequencies"]
         frf = hvd["frf"]
         mf = frf["file"]
-        m = retrieve_matrix(mf)
+        m = retrieve_matrix(joinpath(cdir, mf))
         freal = real.(m)
         fimag = imag.(m)
         # Amplitude graph
@@ -156,17 +164,17 @@ function plot_frf_errors_direct(sim_list = ["sim1"], filename = "plot.pdf")
     end
 
     for sim in sim_list[2:end]
-        prop = retrieve_json(sim)
+        prop = retrieve_json(joinpath(cdir, sim))
         mesh_n = prop["mesh_n"]
         # Load the data for the graph of the FRF
-        j = joinpath(prop["resultsdir"], sim * "-results" * ".json")
+        j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
         results = retrieve_json(j)
         hvd = results["harmonic_vibration"] 
         # Unwrap the data
         frequencies = hvd["sweep_frequencies"]
         frf = hvd["frf"]
         mf = frf["file"]
-        m = retrieve_matrix(mf)
+        m = retrieve_matrix(joinpath(cdir, mf))
         freal = real.(m)
         fimag = imag.(m)
         # Amplitude graph
