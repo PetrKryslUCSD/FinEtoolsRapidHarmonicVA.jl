@@ -1,5 +1,5 @@
 # Activate/instantiate the Plotting environment.
-# Then execute this file.
+# Then execute this file.1
 using FinEtoolsRapidHarmonicVA
 
 
@@ -13,7 +13,7 @@ using FinEtoolsRapidHarmonicVA
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enhanced", "modal"), ] #  ("lanczos_ritz", "modal")
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ]
 #the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_residual", "modal"),]
-the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"), ("two_stage_free_resid", "modal"),]
+the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
 #the_methods = [("wyd_ritz", "modal"), ("free", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
 
 clear_terminal()
@@ -29,12 +29,13 @@ for mesh_n in [3]
             push!(sims, sim)
         end
         
-        title = "twisted_bar-frf-mesh_n-$(mesh_n)-$(nmodes)-$(linsolve_method)-$(itmax)"
-        file = title * ".pdf"
+        title = "brake_disc-frf-mesh_n-$(mesh_n)-$(nmodes)-$(linsolve_method)-$(itmax)"
+        file = title
         # plot_frf_errors(sim_directory(), sims, file; title = title)
-        plot_frf_amplitudes(sim_directory(), sims, file; title = title)
+        plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; title = title)
         #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
 
-        saveas(file)
+        # saveas(file  * ".gp")#
+        saveas(file * ".pdf")
     end
 end

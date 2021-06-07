@@ -21,13 +21,18 @@ function clear_terminal()
 end
 
 function saveas(a) 
-    a = fixupext(a, ".pdf")
-    @gp  :- "set terminal push" :-
-    @gp  :- "set terminal pdfcairo " :-
-    @gp  :- "set output '$(a)' "  :-
-    @gp  :- "replot"   :-
-    @gp  :- "set output" :-
-    @gp  :- "set terminal pop" 
+    f, e = splitext(a)
+    if e == ".gp"
+        Gnuplot.save(a)
+    else
+        a = fixupext(a, ".pdf")
+        @gp  :- "set terminal push" :-
+        @gp  :- "set terminal pdfcairo " :-
+        @gp  :- "set output '$(a)' "  :-
+        @gp  :- "replot"   :-
+        @gp  :- "set output" :-
+        @gp  :- "set terminal pop" 
+    end    
 end
     
 
