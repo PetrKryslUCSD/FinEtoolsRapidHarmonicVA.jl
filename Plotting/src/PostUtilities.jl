@@ -51,15 +51,13 @@ function reduced_basis_technique(reduction_method)
     elseif reduction_method == "two_stage_free"
         return "2SV"
     elseif reduction_method == "two_stage_free_resid"
-        return "2S VB/R"
-    elseif reduction_method == "two_stage_free_enhanced"
-        return "Red VB/enh"
+        return "2SVR"
     elseif reduction_method == "wyd_ritz"
-        return "WYD"
+        return "W"
     elseif reduction_method == "lanczos_ritz"
         return "LNC"
     elseif reduction_method == "two_stage_wyd_ritz"
-        return "2SWYD"
+        return "2SW"
     elseif reduction_method == "two_stage_free_enh"
         return "2SVE"
     else
@@ -101,7 +99,7 @@ function reduced_basis_time(reduction_method, tims)
     elseif reduction_method == "two_stage_free"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction"]])
     elseif reduction_method == "two_stage_free_resid"
-        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction", "Additional vectors",]])
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction", "Additional vectors"]])
     elseif reduction_method == "two_stage_free_enhanced"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     elseif reduction_method == "wyd_ritz"
