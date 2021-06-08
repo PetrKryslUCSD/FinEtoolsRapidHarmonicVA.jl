@@ -384,19 +384,22 @@ function two_stage_free_enh(cdir, sim, make_model)
 
             # Compute residual of the free vibration
             x0 .= phi
-            r0 .= (-omega^2*(M*x0) + K*x0)
+            r0 .= -(-omega^2*(M*x0) + K*x0)
 
             # Without preconditioning
             (DU, stats) = met(alg, (-omega^2*M + K), r0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
             @show stats
 
-            # Normalize the vector to unit length
-            DU /= norm(DU)
+            # What if I were to replace the approximate eigenvector?
+            approxevec[:, wr] += DU
 
             # Replace the least significant modes: the eigenvectors for high
             # frequencies are replaced by the additional vectors.
-            @show ni = size(approxevec, 2) - length(resonance_list) + i
-            approxevec[:, ni] = DU
+          
+            # Normalize the vector to unit length
+            # DU /= norm(DU)
+            # @show ni = size(approxevec, 2) - length(resonance_list) + i
+            # approxevec[:, ni] = DU
 
             # An alternative strategy is to append to the modes that came from
             # the eigenvalue analysis 
