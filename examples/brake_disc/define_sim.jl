@@ -156,6 +156,7 @@ function define_sim(; kws...)
     prop["itmax"] = 0
     prop["resonance_list"] = 1:6
     prop["linsolve_method"] = ""
+    prop["frequency_sweep"] = (1000, 20000, 10000)
 
     # Overrides
     for k in keys(kws)
