@@ -23,15 +23,15 @@ function saveas(a)
        
 end
     
-function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="")
-    _plot_frf(cdir, sim_list, filename, :errors, range, title)
+function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="", logx = true)
+    _plot_frf(cdir, sim_list, filename, :errors, range, title, logx)
 end
 
-function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="")
-    _plot_frf(cdir, sim_list, filename, :amplitudes, range, title)
+function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="", logx = true)
+    _plot_frf(cdir, sim_list, filename, :amplitudes, range, title, logx)
 end
 
-function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf], title="")
+function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf], title="", logx = true)
     objects = []
     
     direct_frequencies, direct_ampls = let sim = sim_list[1]
@@ -114,7 +114,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
             ylabel = "Displacement FRF [mm]",
             xmin = range[1],
             xmax = range[2],
-            xmode = "log",
+            xmode = logx ? "log" : "linear",
             ymode = "log",
             yminorgrids = "true",
             grid = "both",
