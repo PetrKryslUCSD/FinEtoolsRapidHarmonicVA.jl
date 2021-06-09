@@ -384,30 +384,31 @@ function two_stage_free_enh(cdir, sim, make_model)
             # Compute residual of the free vibration
             r0 .= residual(phi, omega, M, K)
             # r0 .= -(-omega^2*(M*phi) + K*phi)
-            @show norm(r0)
+            # @show norm(r0)
 
             # Without preconditioning
             (DU, stats) = met(alg, (-omega^2*M + K), r0; atol = 0.0, rtol = 0.0, itmax = itmax, history=true)
-            @show stats
-            r0 .= residual(DU, omega, M, K)
-            @show norm(r0)
-            r0 .= residual(phi+DU, omega, M, K)
-            @show norm(r0)
+            # @show stats
+            # r0 .= residual(DU, omega, M, K)
+            # @show norm(r0)
+            # r0 .= residual(phi+DU, omega, M, K)
+            # @show norm(r0)
 
-            # What if I were to replace the approximate eigenvector?
-            approxevec[:, wr] += DU
+            
 
-            # Replace the least significant modes: the eigenvectors for high
+            # 1. A possible strategy is to append to the modes that came from
+            # the eigenvalue analysis 
+            #approxevec = hcat(approxevec, DU)
+
+            # 2. Replace the least significant modes: the eigenvectors for high
             # frequencies are replaced by the additional vectors.
-          
             # Normalize the vector to unit length
             # DU /= norm(DU)
             # @show ni = size(approxevec, 2) - length(resonance_list) + i
             # approxevec[:, ni] = DU
 
-            # An alternative strategy is to append to the modes that came from
-            # the eigenvalue analysis 
-            #approxevec = hcat(approxevec, DU)
+            # 3. What if I were to replace the approximate eigenvector?
+            approxevec[:, wr] += DU
         end
    
     end
