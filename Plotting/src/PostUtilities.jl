@@ -99,7 +99,7 @@ function reduced_basis_time(reduction_method, tims)
     elseif reduction_method == "two_stage_free"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction"]])
     elseif reduction_method == "two_stage_free_resid"
-        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Eigenvector reconstruction", "Additional vectors"]])
+        return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     elseif reduction_method == "two_stage_free_enhanced"
         return sum([tims[k] for k in ["Partitioning", "Transformation matrix", "Reduced matrices", "EV problem", "Additional vectors"]])
     elseif reduction_method == "wyd_ritz"

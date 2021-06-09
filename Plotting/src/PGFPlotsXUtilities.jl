@@ -34,7 +34,7 @@ end
 function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf], title="")
     objects = []
     
-    direct_frequencies, direct_ampls, range_indexes = let sim = sim_list[1]
+    direct_frequencies, direct_ampls = let sim = sim_list[1]
         prop = retrieve_json(joinpath(cdir, sim))
 
         # Load the data for the graph of the FRF
@@ -52,21 +52,23 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         # Amplitude graph
         direct_ampls = abs.(freal + 1im*fimag)./phun("mm")
         @assert length(direct_ampls) == length(direct_frequencies)
-        range_indexes = [i for i in 1:length(direct_frequencies) 
-            if range[1] <= direct_frequencies[i] <= range[2]] 
+        # range_indexes = [i for i in 1:length(direct_frequencies) 
+            # if range[1] <= direct_frequencies[i] <= range[2]] 
         @pgf p = PGFPlotsX.Plot(
         {
         color = "black",
         line_width  = 0.7
         },
-        Coordinates([v for v in  zip(direct_frequencies[range_indexes], direct_ampls[range_indexes])])
+        Coordinates([v for v in  zip(direct_frequencies, direct_ampls)])
         )
         push!(objects, p)
         push!(objects, LegendEntry("Ref"))
         
-        direct_frequencies, direct_ampls, range_indexes
+        direct_frequencies, direct_ampls
     end
-
+    if range[1] == -Inf || range[2] == Inf
+        range = [minimum(direct_frequencies), maximum(direct_frequencies)]
+    end
     siml = sim_list[2:end]
     # if what != :errors
     #     siml = sim_list
@@ -98,8 +100,8 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         line_width = 0.7
         },
         what == :errors ? 
-        Coordinates([v for v in  zip(frequencies[range_indexes], abs.(direct_ampls[range_indexes] .- ampls[range_indexes]))]) : 
-        Coordinates([v for v in  zip(frequencies[range_indexes], ampls[range_indexes])])
+        Coordinates([v for v in  zip(frequencies, abs.(direct_ampls .- ampls))]) : 
+        Coordinates([v for v in  zip(frequencies, ampls)])
 
         )
         push!(objects, p)
@@ -110,6 +112,8 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         {
             xlabel = "Frequency [hertz]",
             ylabel = "Displacement FRF [mm]",
+            xmin = range[1],
+            xmax = range[2],
             xmode = "log",
             ymode = "log",
             yminorgrids = "true",
