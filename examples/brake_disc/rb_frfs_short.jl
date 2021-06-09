@@ -32,8 +32,8 @@ for mesh_n in [3]
         title = "brake_disc-frf-mesh_n-$(mesh_n)-$(nmodes)-long"
         file = title
         # plot_frf_errors(sim_directory(), sims, file; title = title)
-        # plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; range = [1200, 3200], title = title)
-        plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; title = title)
+        plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; range = [1200, 3200], title = title, logx = false)
+        # plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; title = title, logx = false)
         #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
 
         # saveas(file  * ".gp")#
@@ -42,25 +42,25 @@ for mesh_n in [3]
 end
 
 
-# linsolve_method = "minres"
-# itmax = 20
-# mesh_n = 3
-# nmodes = 100
-# # 
-# sims = []
-# (reduction_method, harmonic_method)  = ("free", "modal")
-# sim = define_sim(; namebase = "long", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method,)
-# push!(sims, sim)
-# (reduction_method, harmonic_method)  = ("two_stage_free_enh", "modal")
-# sim = define_sim(; namebase = "short", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax)
-# push!(sims, sim)
+linsolve_method = "minres"
+itmax = 20
+mesh_n = 3
+nmodes = 100
+# 
+sims = []
+(reduction_method, harmonic_method)  = ("free", "modal")
+sim = define_sim(; namebase = "long", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method,)
+push!(sims, sim)
+(reduction_method, harmonic_method)  = ("two_stage_free_enh", "modal")
+sim = define_sim(; namebase = "short", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax)
+push!(sims, sim)
 
-# title = "brake_disc-frf-mesh_n-$(mesh_n)-$(nmodes)-w-enh"
-# file = title
-#         # plot_frf_errors(sim_directory(), sims, file; title = title)
-# plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; range = [1200, 3200], title = title)
-#         #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
+title = "brake_disc-frf-mesh_n-$(mesh_n)-$(nmodes)-w-enh"
+file = title
+        # plot_frf_errors(sim_directory(), sims, file; title = title)
+plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; range = [1200, 3200], title = title, logx = false)
+        #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
 
-#         # saveas(file  * ".gp")#
-# saveas(file * ".pdf")
+        # saveas(file  * ".gp")#
+saveas(file * ".pdf")
 

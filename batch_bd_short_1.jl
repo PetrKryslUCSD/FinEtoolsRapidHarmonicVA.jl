@@ -14,19 +14,19 @@ reduction_methods = ["free", "two_stage_free", ]
 linsolve_method = "minres"
 itmax = 5
 
-@info "Running simulations"
+# @info "Running simulations"
 
-for mesh_n in [3, ]
-    for nmodes in [100, ]
-        for reduction_method in reduction_methods
-            itmaxs = (reduction_method == "two_stage_free_enh") ? [20] : [0]
-            for itmax in itmaxs
-                sim = define_sim(; namebase = "long", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax )
-                solve(sim_directory(), sim, make_model)
-            end
-        end
-    end
-end
+# for mesh_n in [3, ]
+#     for nmodes in [100, ]
+#         for reduction_method in reduction_methods
+#             itmaxs = (reduction_method == "two_stage_free_enh") ? [20] : [0]
+#             for itmax in itmaxs
+#                 sim = define_sim(; namebase = "long", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax )
+#                 solve(sim_directory(), sim, make_model)
+#             end
+#         end
+#     end
+# end
 
 
 reduction_methods = [ "two_stage_free_enh", ]
@@ -41,4 +41,3 @@ for mesh_n in [3, ]
         end
     end
 end
-
