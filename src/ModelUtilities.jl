@@ -370,9 +370,8 @@ function two_stage_free_enh(cdir, sim, make_model)
         #dM = diag(M)
         #dK = diag(K)
 
-        phi = fill(zero(eltype(approxevec)), size(Phi, 1))
-        x0 = similar(phi)
-        r0 = similar(phi)
+        residual(x, omega, M, K) = -(-omega^2*(M*x) + K*x)
+        r0 = fill(zero(eltype(approxevec)), size(Phi, 1))
         for (i, wr) in enumerate(resonance_list)
             @show f = approxfs[wr]
             omega = 2*pi*f;
@@ -380,15 +379,20 @@ function two_stage_free_enh(cdir, sim, make_model)
             # frequency. It is a good solution for the reduced system, but not
             # so good for the full system. The difference will be used as the
             # additional vector.
-            phi .= view(approxevec, :, wr)
+            phi = view(approxevec, :, wr)
 
             # Compute residual of the free vibration
-            x0 .= phi
-            r0 .= -(-omega^2*(M*x0) + K*x0)
+            r0 .= residual(phi, omega, M, K)
+            # r0 .= -(-omega^2*(M*phi) + K*phi)
+            @show norm(r0)
 
             # Without preconditioning
-            (DU, stats) = met(alg, (-omega^2*M + K), r0; atol = 0.0, rtol = 0.0, itmax = itmax, verbose=0)
+            (DU, stats) = met(alg, (-omega^2*M + K), r0; atol = 0.0, rtol = 0.0, itmax = itmax, history=true)
             @show stats
+            r0 .= residual(DU, omega, M, K)
+            @show norm(r0)
+            r0 .= residual(phi+DU, omega, M, K)
+            @show norm(r0)
 
             # What if I were to replace the approximate eigenvector?
             approxevec[:, wr] += DU
