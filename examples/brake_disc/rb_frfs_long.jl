@@ -14,9 +14,8 @@ the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"
 the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ]
 #the_methods = [("none", "direct"), ("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_residual", "modal"),]
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
-#the_methods = [("wyd_ritz", "modal"), ("free", "modal"), ("two_stage_free", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"),]
-the_methods = [("free", "modal"), ("two_stage_free", "modal"), ]
-the_methods = [("free", "modal"), ("two_stage_free_enh", "modal"), ]
+the_methods = [("free", "modal"), ("two_stage_free", "modal"),]
+the_methods = [("free", "modal"), ("two_stage_free_enh", "modal"),]
 
 clear_terminal()
 
@@ -35,6 +34,7 @@ for mesh_n in [3]
         file = title
         # plot_frf_errors(sim_directory(), sims, file; title = title)
         plot_frf_amplitudes(sim_directory(), sims, file * ".pdf"; title = title, logx = false, range = [1200, 3200], mark_repeat = 159)
+        # 
         #plot_frf_amplitudes(sim_directory(), sims, "frf-m$(mesh_n)-n$(nmodes).pdf")
 
         # saveas(file  * ".gp")#

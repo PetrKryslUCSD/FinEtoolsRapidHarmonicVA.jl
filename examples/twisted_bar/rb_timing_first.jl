@@ -15,9 +15,7 @@ the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "mod
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ]
 #the_methods = [("free", "modal"), ("two_stage_free", "modal"), ]
 
-for_nmodes = 400
-linsolve_method = "minres"
-itmax = 5
+for_nmodes = 25
 plots = []
 legends = []
 
@@ -27,7 +25,7 @@ for (reduction_method, harmonic_method) in the_methods
     timings = []
     for nmodes in [for_nmodes,  ]
         for mesh_n in [4, 6, 8, 10, 12, 14, 16]
-            sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method, linsolve_method = linsolve_method, itmax = itmax)
+            sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method)
             prop = retrieve_json(joinpath(cdir, sim))
             j = joinpath(cdir, prop["resultsdir"], sim * "-results" * ".json")
             results = retrieve_json(j)
