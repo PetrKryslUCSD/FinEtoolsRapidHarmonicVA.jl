@@ -12,11 +12,11 @@ cdir = sim_directory()
 stage = "reduced_basis"
 
 the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal")]
-#the_methods = [("free", "modal"), ("two_stage_free", "modal"), ]
+# the_methods = [("free", "modal"), ("two_stage_free_enh", "modal"), ]
 
-for_nmodes = 100
+for_nmodes = 400
 linsolve_method = "minres"
-itmax = 5
+itmax = 40
 plots = []
 legends = []
 

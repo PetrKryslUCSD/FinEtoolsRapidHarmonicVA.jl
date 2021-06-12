@@ -11,19 +11,18 @@ using FinEtoolsRapidHarmonicVA
 cdir = sim_directory()
 stage = "reduced_basis"
 
-the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"), ("two_stage_free_resid", "modal")]
+the_methods = [("free", "modal"), ("two_stage_free", "modal"), ("wyd_ritz", "modal"), ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"), ]
+the_methods = [("free", "modal"), ("wyd_ritz", "modal"), ("two_stage_free", "modal"),  ("two_stage_wyd_ritz", "modal"), ("two_stage_free_enh", "modal"), ]
 #the_methods = [("free", "modal"), ("two_stage_free", "modal"), ]
 
-mesh_n = 3
-for_nmodes = [50, 100, 200, 400]
+mesh_n = 4
+for_nmodes = [100, 200, 400]
 linsolve_method = "minres"
-itmax = 5
+itmax = 20
 plots = []
 legends = []
 
 for (reduction_method, harmonic_method) in the_methods
-
-
     timings = []
     for nmodes in for_nmodes
         sim = define_sim(; mesh_n = mesh_n, nmodes = (harmonic_method == "direct" ? 0 : nmodes), reduction_method = reduction_method, harmonic_method = harmonic_method, linsolve_method = linsolve_method, itmax = itmax)
