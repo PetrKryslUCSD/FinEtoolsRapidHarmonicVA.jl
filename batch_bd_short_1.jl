@@ -35,7 +35,7 @@ for mesh_n in [3, ]
     for nmodes in [100, ]
         for reduction_method in reduction_methods
             for itmax in [20]
-                sim = define_sim(; namebase = "short", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax, frequency_sweep = (1300, 3100, 800), resonance_list = 1:5)
+                sim = define_sim(; namebase = "short", mesh_n = mesh_n, nmodes = nmodes, reduction_method = reduction_method, linsolve_method = linsolve_method, itmax = itmax, frequency_sweep = (1300, 3100, 800), resonance_list = 1:6)
                 solve(sim_directory(), sim, make_model)
             end
         end
