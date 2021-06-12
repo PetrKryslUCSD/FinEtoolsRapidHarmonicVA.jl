@@ -70,7 +70,7 @@ function reduced_basis_style(reduction_method)
     if reduction_method == "free"
         return ("red", "diamond")
     elseif reduction_method == "two_stage_free"
-        return ("green", "x")
+        return ("olive", "x")
     elseif reduction_method == "wyd_ritz"
          return ("blue", "o")
     elseif reduction_method == "lanczos_ritz"
@@ -86,7 +86,7 @@ function reduced_basis_style(reduction_method)
     elseif (reduction_method == "two_stage_free_resid")
         return ("orange", "square")
     elseif reduction_method == "two_stage_free_enh"
-        return ("magenta", "star")
+        return ("magenta", "triangle")
     else
         return ("", "")
     end

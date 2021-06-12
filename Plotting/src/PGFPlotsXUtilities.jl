@@ -23,15 +23,15 @@ function saveas(a)
        
 end
     
-function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="", logx = true)
-    _plot_frf(cdir, sim_list, filename, :errors, range, title, logx)
+function plot_frf_errors(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="", logx = true, mark_repeat = 15)
+    _plot_frf(cdir, sim_list, filename, :errors, range, title, logx, mark_repeat)
 end
 
-function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="", logx = true)
-    _plot_frf(cdir, sim_list, filename, :amplitudes, range, title, logx)
+function plot_frf_amplitudes(cdir, sim_list = ["sim1"], filename = "plot.pdf"; range = [-Inf, Inf], title="", logx = true, mark_repeat = 15)
+    _plot_frf(cdir, sim_list, filename, :amplitudes, range, title, logx, mark_repeat)
 end
 
-function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf], title="", logx = true)
+function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :errors, range = [-Inf, Inf], title="", logx = true, mark_repeat = 15)
     objects = []
     
     direct_frequencies, direct_ampls = let sim = sim_list[1]
@@ -96,7 +96,7 @@ function _plot_frf(cdir, sim_list = ["sim1"], filename = "plot.pdf", what = :err
         {
         color = s[1],
         mark = s[2],
-        mark_repeat = 15,
+        mark_repeat = mark_repeat,
         line_width = 0.7
         },
         what == :errors ? 
