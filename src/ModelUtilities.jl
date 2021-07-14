@@ -9,7 +9,9 @@ using FinEtools
 using FinEtoolsDeforLinear
 using FinEtools.MatrixUtilityModule: export_sparse, import_sparse
 using LinearAlgebra: eigen
+using Krylov: minres! as KrylovMinres!
 import CoNCMOR: CoNCData, transfmatrix, LegendreBasis, SineCosineBasis 
+using IterativeSolvers: minres!
 
 # With Arpack 0.5, the explicit transform argument is needed to avoid
 # unnecessary and expensive calculation.
@@ -101,6 +103,7 @@ function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, powertwo = true, 
     lambda = c / fmax
     d = min(lambda, smallestdimension)
     Ncfloat = V / d^3
+    @show V, d
     if powertwo
         Nchi = nextpow(2, Ncfloat)
         Nclo =    Ncfloat > 1.0 ? prevpow(2, Ncfloat) : 2
@@ -113,6 +116,7 @@ function reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, powertwo = true, 
     else
         Nc = Nchi
     end
+    @show Nclo, Nchi, N, Nc, N/Nc
     nbf1max = Int(floor((N / Nc)^(1.0/3))) 
     # The maximum number of 1d basis functions is reduced to assist with
     # arrangements of nodes that could prevent the columns of the
@@ -353,7 +357,7 @@ function two_stage_free_enh(cdir, sim, make_model)
         alg = nothing; met = nothing
         if linsolve_method == "minres"
             alg = MinresSolver(size(K, 1), size(K, 2), typeof(F))
-            met = minres!
+            met = KrylovMinres!
         elseif linsolve_method == "symmlq"
             alg = SymmlqSolver(size(K, 1), size(K, 2), typeof(F))
             met = symmlq!
@@ -541,7 +545,7 @@ function two_stage_free_resid(cdir, sim, make_model)
             C = K
             Cr = deepcopy(Kr)
         else
-            Cr = transfm(C, evecs)
+            Cr = transfm(C, T)
         end
         loss_factor = "loss_factor" in keys(model) ? model["loss_factor"] : 0.0
         Fr = transfv(F, T)
@@ -564,6 +568,163 @@ function two_stage_free_resid(cdir, sim, make_model)
         approxevec[:, norig+1:norig+size(P, 2)] .= P
         approxevec = approxevec[:, 1:norig+size(P, 2)]
     end
+    @info "Additional vectors: $(round(timing["Additional vectors"], digits=2))"
+     
+    rd = Dict()
+
+    rd["number_of_nodes"] = count(fens)
+    rd["number_of_modes"] = size(approxevec, 2)
+    rd["number_of_clusters"] = Nc
+    rd["nbf1max"] = nbf1max
+
+    rd["frequencies"] = approxfs
+    timing["Total"] = timing["Problem setup"] + timing["Partitioning"] + timing["Transformation matrix"] + timing["Reduced matrices"] + timing["EV problem"] + timing["Additional vectors"] 
+    rd["timing"] = timing
+
+    file = joinpath(matricesdir, with_extension(sim * "-Phi", "h5"))
+    rd["basis"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["basis"]["file"]), approxevec)
+    file = joinpath(matricesdir, with_extension(sim * "-eval", "h5"))
+    rd["eigenvalues"] = Dict("file"=>file)
+    store_matrix(joinpath(cdir, rd["eigenvalues"]["file"]), eval)
+
+    results["reduced_basis"] = rd
+    store_json(joinpath(cdir, resultsfile), results)
+
+    true
+end
+
+function two_stage_free_minres(cdir, sim, make_model)
+    @info "Free Vibration (Enhanced with minres solutions)"
+    prop = retrieve_json(joinpath(cdir, sim))
+
+    resultsdir = prop["resultsdir"]
+    mkpath(joinpath(cdir, resultsdir))
+    resultsfile = joinpath(resultsdir, with_extension(sim * "-results", "json"))
+    matricesdir = prop["matricesdir"]
+    mkpath(joinpath(cdir, matricesdir))
+
+    results = Dict()
+    if isfile(joinpath(cdir, resultsfile))
+        results = retrieve_json(joinpath(cdir, resultsfile))
+    end
+
+    timing = Dict{String, FFlt}()
+
+    timing["Problem setup"] = @elapsed begin
+        model = make_model(prop)       
+    end
+
+    fens = model["fens"]
+    @info "$(count(fens)) nodes"
+
+    femm = model["femm"]
+    geom = model["geom"]
+    V = integratefunction(femm, geom, (x) ->  1.0)
+
+    N = count(fens)
+    E = prop["E"]
+    nu = prop["nu"]
+    rho = prop["rho"]
+    fmax = prop["fmax"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
+
+    mor = nothing
+    V = integratefunction(femm, geom, (x) ->  1.0)
+    alpha = prop["alpha"]
+    smallestdimension = prop["smallestdimension"]
+    nbf1maxclamp = prop["nbf1maxclamp"]
+    partitioning_method = "partitioning_method" in keys(model) ?  model["partitioning_method"] : "rib"
+    Nc, nbf1max = reducedmodelparameters(V, N, E, nu, rho, fmax, alpha, (partitioning_method == "rib"), smallestdimension, nbf1maxclamp)
+    @info "Number of clusters $Nc, number of functions $nbf1max"
+    
+    timing["Partitioning"] = @elapsed begin
+        partitioning = Int[]
+        if partitioning_method == "metis"
+            @info "Metis partitioning"
+            C = connectionmatrix(femm, count(fens))
+            g = Metis.graph(C; check_hermitian=true)
+            partitioning = Metis.partition(g, Nc; alg = :KWAY)
+        else # Default: Recursive Inertial Bisection
+            @info "RIB partitioning"
+            partitioning = nodepartitioning(fens, Nc)
+        end
+        mor = CoNCData(fens, partitioning)
+    end
+
+    u = model["u"]
+
+    timing["Transformation matrix"] = @elapsed begin
+        Phi = transfmatrix(mor, LegendreBasis, nbf1max, u);
+    end
+
+    nmodes = prop["nmodes"]
+    mass_shift = prop["mass_shift"]
+    K = model["K"]
+    M = model["M"]
+    F = model["F"]
+    @info "Sparsity of K: $(nnz(K)/prod(size(K)))"
+    @info "Sparsity of M: $(nnz(M)/prod(size(M)))"
+
+    transfm(m, evecs) = (evecs' * m * evecs)
+    transfv(v, evecs) = (evecs' * v)
+    timing["Reduced matrices"] = @elapsed begin
+        Kr = transfm(K, Phi)
+        #Kr .= 0.5 * (Kr .+ transpose(Kr))
+        Mr = transfm(M, Phi)
+        #Mr .= 0.5 * (Mr .+ transpose(Mr))
+    end
+    @info "Transformation matrix dimensions $(size(Phi))"
+
+    timing["EV problem"] = @elapsed begin
+        eval, evec, nconv = _eigs(Kr + mass_shift*Mr, Mr, nmodes)
+        approxfs = @. real(sqrt(complex(eval - mass_shift)))/(2*pi);
+    end
+    @info "EV problem: $(round(timing["EV problem"], digits=2))"
+
+    println("Approximate natural frequencies: $(round.(approxfs, digits=4)) [Hz]")
+    
+    # Add additional vectors due to resonance residuals
+    resonance_list = prop["resonance_list"]
+    @info "Enhancement with minres solutions"
+    timing["Additional vectors"] = @elapsed begin
+        T = Phi*real(evec)
+        norig = size(T, 2)
+        Kr = transfm(K, T)
+        Mr = transfm(M, T)
+        C = model["C"]
+        if C === nothing 
+            C = K
+            Cr = deepcopy(Kr)
+        else
+            Cr = transfm(C, T)
+        end
+        loss_factor = "loss_factor" in keys(model) ? model["loss_factor"] : 0.0
+        Fr = transfv(F, T)
+        approxevec = deepcopy(T)
+        for (i, r) in enumerate(resonance_list)
+            f = approxfs[r]
+            omega = 2*pi*f;
+            cmult = loss_factor == 0.0 ? omega : loss_factor
+            Ur = (-omega^2*Mr + (1im*cmult)*Cr + Kr)\Fr;
+            Kd = (-omega^2*M + (1im*cmult)*C + K)
+            U = T*Ur
+            # U2 = deepcopy(U)
+            minres!(U, Kd, F; maxiter=10)
+            
+            # U2 .-= U
+            approxevec = hcat(approxevec, imag.(U))
+            approxevec = hcat(approxevec, real.(U))
+        end
+
+        P = approxevec[:, norig+1:end]'*approxevec[:, norig+1:end]
+        eigenObj = eigen(P)
+        selectVectors = findall(abs.(eigenObj.values) .> 1e-8)
+        P = approxevec[:, norig+1:end] * eigenObj.vectors[:, selectVectors]
+        approxevec[:, norig+1:norig+size(P, 2)] .= P
+        approxevec = approxevec[:, 1:norig+size(P, 2)]
+    end
+    # @show size(approxevec)
     @info "Additional vectors: $(round(timing["Additional vectors"], digits=2))"
      
     rd = Dict()
@@ -929,6 +1090,8 @@ function reduced_basis(cdir, sim, make_model)
         two_stage_free_enhanced(cdir, sim, make_model)
     elseif prop["reduction_method"] == "two_stage_free_resid"
         two_stage_free_resid(cdir, sim, make_model)
+    elseif prop["reduction_method"] == "two_stage_free_minres"
+        two_stage_free_minres(cdir, sim, make_model)
     elseif prop["reduction_method"] == "free"
         free(cdir, sim, make_model)
     elseif prop["reduction_method"] == "wyd_ritz"
