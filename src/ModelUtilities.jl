@@ -62,6 +62,11 @@ function free(cdir, sim, make_model)
     K = model["K"]
     M = model["M"]
     F = model["F"]
+    
+    femm = model["femm"]
+    geom = model["geom"]
+    
+    @show V = integratefunction(femm, geom, (x) ->  1.0)
     timing["EV problem"] = @elapsed begin
         eval, evec, nconv = _eigs(K + mass_shift*M, M, nmodes)
         eval .-=  mass_shift;
