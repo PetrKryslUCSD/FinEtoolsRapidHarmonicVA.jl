@@ -95,9 +95,9 @@ end #
 function exportgraphics(cdir, sim)
     prop = retrieve_json(joinpath(cdir, sim))
     fens, fes, clampedl, lbdfes = make_mesh(prop)
-    File =  "twistedbar" * "-nn-$(count(fens))-mesh.vtk"
+    File =  "brake_disc" * "-nn-$(count(fens))-mesh.vtk"
     vtkexportmesh(joinpath(cdir, File), fens, fes)
-    File =  "twistedbar" * "-nn-$(count(fens))-loaded-face-mesh.vtk"
+    File =  "brake_disc" * "-nn-$(count(fens))-loaded-face-mesh.vtk"
     vtkexportmesh(joinpath(cdir, File), fens, lbdfes)
 end
 
