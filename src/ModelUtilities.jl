@@ -66,7 +66,7 @@ function free(cdir, sim, make_model)
     femm = model["femm"]
     geom = model["geom"]
     
-    @show V = integratefunction(femm, geom, (x) ->  1.0)
+    V = integratefunction(femm, geom, (x) ->  1.0)
     timing["EV problem"] = @elapsed begin
         eval, evec, nconv = _eigs(K + mass_shift*M, M, nmodes)
         eval .-=  mass_shift;
@@ -1119,7 +1119,7 @@ function reduced_basis(cdir, sim, make_model)
 end
 
 function harmonic_vibration_modal(cdir, sim, make_model)
-    @info "Modal Harmonic Vibration"
+    @info "Modal Harmonic Vibration Sweep"
     prop = retrieve_json(joinpath(cdir, sim))
     
     resultsdir = prop["resultsdir"]
@@ -1210,7 +1210,7 @@ function harmonic_vibration_modal(cdir, sim, make_model)
 end
 
 function harmonic_vibration_direct(cdir, sim, make_model)
-    @info "Direct Harmonic Vibration"
+    @info "Direct Harmonic Vibration Sweep"
     prop = retrieve_json(joinpath(cdir, sim))
 
     resultsdir = prop["resultsdir"]
