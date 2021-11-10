@@ -9,7 +9,7 @@ using FinEtools
 using FinEtoolsDeforLinear
 using FinEtools.MatrixUtilityModule: export_sparse, import_sparse
 using LinearAlgebra: eigen
-using Krylov: minres! as KrylovMinres!
+using Krylov: minres! as krylov_minres!
 import CoNCMOR: CoNCData, transfmatrix, LegendreBasis, SineCosineBasis 
 using IterativeSolvers: minres!
 
@@ -362,7 +362,7 @@ function two_stage_free_enh(cdir, sim, make_model)
         alg = nothing; met = nothing
         if linsolve_method == "minres"
             alg = MinresSolver(size(K, 1), size(K, 2), typeof(F))
-            met = KrylovMinres!
+            met = krylov_minres!
         elseif linsolve_method == "symmlq"
             alg = SymmlqSolver(size(K, 1), size(K, 2), typeof(F))
             met = symmlq!
@@ -386,8 +386,7 @@ function two_stage_free_enh(cdir, sim, make_model)
             omega = 2*pi*f;
             # Initial guess of the solution of the forced vibration at this
             # frequency. It is a good solution for the reduced system, but not
-            # so good for the full system. The difference will be used as the
-            # additional vector.
+            # so good for the full system. 
             phi = view(approxevec, :, wr)
 
             # Compute residual of the free vibration
@@ -396,7 +395,9 @@ function two_stage_free_enh(cdir, sim, make_model)
             # @show norm(r0)
 
             # Without preconditioning
-            (DU, stats) = met(alg, (-omega^2*M + K), r0; atol = 0.0, rtol = 0.0, itmax = itmax, history=true)
+            alg = met(alg, (-omega^2*M + K), r0; atol = 0.0, rtol = 0.0, itmax = itmax, history=true)
+            DU = solution(alg)
+            stats = statistics(alg)
             # @show stats
             # r0 .= residual(DU, omega, M, K)
             # @show norm(r0)
