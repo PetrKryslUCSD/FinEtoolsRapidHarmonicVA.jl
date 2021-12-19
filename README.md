@@ -4,6 +4,8 @@
 
 The foundation model-reduction algorithm is implemented in [`FinEtoolsRapidEig`](https://github.com/PetrKryslUCSD/FinEtoolsRapidEig.jl).
 Refer to a draft of the forthcoming paper that can be found in the `docs` folder of this repository.
+The article now appeared as [http://doi.org/10.1002/nme.6900](http://doi.org/10.1002/nme.6900).
+
 
 ## Installation
 
